@@ -6,7 +6,7 @@ title: Oracle 数据库在 AIX 平台上启用大内存页
 
 ## 修改用户属性
 
-    # 官方文档只要求如下两个，但有些文档说 CAP_NUMA_ATTACH 也需要
+# 官方文档只要求如下两个，但有些文档说 CAP_NUMA_ATTACH 也需要
     chuser capabilities=CAP_BYPASS_RAC_VMM,CAP_PROPAGATE oracle
 
     # 如果是 RAC 环境，还需要修改root用户
