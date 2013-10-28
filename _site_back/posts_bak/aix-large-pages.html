@@ -1,0 +1,155 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>Oracle 数据库在 AIX 平台上启用大内存页</title>
+    <meta name="author" content="kyle x lau" />
+    <link href="http://kyle.xlau.org/atom.xml" rel="alternate" title="liyichao's Weblog" type="application/atom+xml" />
+
+    <!-- Homepage CSS -->
+    <link rel="stylesheet" href="/assets/css/bootstrap.min.css" type="text/css" media="screen" charset="utf-8" />
+    <link rel="stylesheet" href="/assets/css/bootstrap-responsive.css" type="text/css" media="screen" charset="utf-8" />
+    <link rel="stylesheet" href="/assets/css/app.css" type="text/css" media="screen" charset="utf-8" />
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+	<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+
+    <!-- syntax highlighting CSS -->
+    <link rel="stylesheet" href="/assets/css/syntax.css" type="text/css" media="screen" charset="utf-8" />
+
+    <link rel="shortcut icon" href="assets/ico/favicon.ico">
+      <!-- Fonts -->
+      <link href='http://fonts.googleapis.com/css?family=Yanone+Kaffeesatz' rel='stylesheet' type='text/css'>
+      </head>
+
+      <body>
+	<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+      <a class="brand" href="/">Kylexlau's Weblog</a>
+	<ul class="nav">
+	  <li class="active"><a href="/">Home</a></li>
+	  <li ><a href="/archive.html">Archive</a></li>
+	  <li ><a href="/categories.html">Categories</a></li>
+	  <li ><a href="/sitemap.html">Sitemap</a></li>
+	  <li ><a href="/about.html">About</a></li>
+	</ul>
+	<ul class="nav pull-right">
+	  <li ><a href="/atom.xml">Subscribe</a></li>
+	</ul>
+    </div>
+  </div>
+</div>
+
+	<div class="container">
+	  <div id="post">
+<h1>
+  <a href="/posts/aix-large-pages.html">Oracle 数据库在 AIX 平台上启用大内存页</a>
+</h1>
+<div class="authoring">
+  August 26, 2013
+</div>
+
+<h2>修改用户属性</h2>
+
+<h1>官方文档只要求如下两个，但有些文档说 CAP_NUMA_ATTACH 也需要</h1>
+
+<pre><code>chuser capabilities=CAP_BYPASS_RAC_VMM,CAP_PROPAGATE oracle
+
+# 如果是 RAC 环境，还需要修改root用户
+chuser capabilities=CAP_BYPASS_RAC_VMM,CAP_PROPAGATE root
+</code></pre>
+
+<h2>修改 VMM 参数</h2>
+
+<pre><code># 执行下述命令前先关闭数据库，不然内存大内存页分配不出来。一般系统不需重启。
+# num_of_large_pages = INT((total_SGA_size-1)/16MB)+1
+vmo -p -o lgpg_regions=num_of_large_pages -o lgpg_size=16777216
+
+# AIX 6.1 下默认为0，尽可能不对计算内存换页
+vmo -p -o lru_file_repage=0
+</code></pre>
+
+<p>IBM 对<code>lru_file_repage</code>参数的官方解释：</p>
+
+<blockquote><p>lru_file_repage – when the number of permanent memory pages (numperm) falls between minperm and maxperm (or the number of client memory pages falls between minperm and maxclient), this setting indicates whether repaging rates are considered when deciding to evict permanent memory pages or computational memory pages. Setting this to 0 tells AIX to ignore repaging rates and favor evicting permament memory pages, keeping more computational memory in RAM. The AIX 5L default is 1/true (consider the repaging rate), The AIX 6.1 default is 0/false (now a restricted setting).</p></blockquote>
+
+<h2>修改 Oracle 参数</h2>
+
+<pre><code>alter system set lock_sga=ture scope=spfile sid='*';
+</code></pre>
+
+<p>如果是版本为10.2.0.4的数据库，还需要打一个小补丁，补丁号是7226548。</p>
+
+<h2>参考文档</h2>
+
+<p>具体查询 Oracle 官方支持网站：</p>
+
+<ul>
+<li>How to enable Large Page Feature on AIX-Based Systems (Doc ID
+372157.1)</li>
+<li>Bug 7226548 &ndash; AIX: 10.2.0.4 does not use large pages (Doc ID
+7226548.8)</li>
+<li>SGA Not Pinned In The AIX Large Pages When Instance Is Started With
+Srvctl (Doc ID 369424.1)</li>
+</ul>
+
+
+</div>
+
+<div id="related">
+  <h2>Random Posts</h2>
+  <ul class="posts">
+    
+      <li><span>08 Oct 2013</span> &raquo; <a href="/posts/first-post.html">stat</a></li>
+    
+      <li><span>05 Jul 2012</span> &raquo; <a href="/posts/oracle-data-guard-part2.html">Oracle 11g Data Guard 物理备库快速配置指南（下）</a></li>
+    
+      <li><span>26 Jun 2012</span> &raquo; <a href="/posts/oracle-data-guard-part1.html">Oracle 11g Data Guard 物理备库快速配置指南（上）</a></li>
+    
+      <li><span>13 Apr 2012</span> &raquo; <a href="/posts/linux-sar.html">Linux 下使用 Sar 简介</a></li>
+    
+      <li><span>26 Mar 2012</span> &raquo; <a href="/posts/plsql-style.html">PL/SQL 代码规范</a></li>
+    
+  </ul>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_developer = 1;
+    var disqus_shortname = 'xlau';
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+
+	  <div id="footer">
+  Powered by <a href="https://github.com/mojombo/jekyll">Jekyll</a> and <a href="http://twitter.github.com/bootstrap/">Bootstrap</a>.  Last updated at 2013-10-08 14:11:33 +0800.
+</div>
+
+	</div>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+	<script src="/assets/js/app.js"></script>
+	<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-4770949-2']);
+  _gaq.push(['_setDomainName', 'xlau.org']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+      </body>
+</html>

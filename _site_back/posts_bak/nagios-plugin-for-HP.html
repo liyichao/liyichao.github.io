@@ -1,0 +1,193 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>两个监控HP硬件的Nagios插件</title>
+    <meta name="author" content="kyle x lau" />
+    <link href="http://kyle.xlau.org/atom.xml" rel="alternate" title="liyichao's Weblog" type="application/atom+xml" />
+
+    <!-- Homepage CSS -->
+    <link rel="stylesheet" href="/assets/css/bootstrap.min.css" type="text/css" media="screen" charset="utf-8" />
+    <link rel="stylesheet" href="/assets/css/bootstrap-responsive.css" type="text/css" media="screen" charset="utf-8" />
+    <link rel="stylesheet" href="/assets/css/app.css" type="text/css" media="screen" charset="utf-8" />
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+	<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+
+    <!-- syntax highlighting CSS -->
+    <link rel="stylesheet" href="/assets/css/syntax.css" type="text/css" media="screen" charset="utf-8" />
+
+    <link rel="shortcut icon" href="assets/ico/favicon.ico">
+      <!-- Fonts -->
+      <link href='http://fonts.googleapis.com/css?family=Yanone+Kaffeesatz' rel='stylesheet' type='text/css'>
+      </head>
+
+      <body>
+	<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+      <a class="brand" href="/">Kylexlau's Weblog</a>
+	<ul class="nav">
+	  <li class="active"><a href="/">Home</a></li>
+	  <li ><a href="/archive.html">Archive</a></li>
+	  <li ><a href="/categories.html">Categories</a></li>
+	  <li ><a href="/sitemap.html">Sitemap</a></li>
+	  <li ><a href="/about.html">About</a></li>
+	</ul>
+	<ul class="nav pull-right">
+	  <li ><a href="/atom.xml">Subscribe</a></li>
+	</ul>
+    </div>
+  </div>
+</div>
+
+	<div class="container">
+	  <div id="post">
+<h1>
+  <a href="/posts/nagios-plugin-for-HP.html">两个监控HP硬件的Nagios插件</a>
+</h1>
+<div class="authoring">
+  February 20, 2012
+</div>
+
+<p>主要是两个Ngios插件的使用，都是用Perl写的。check_hpasm 是大牛德国人 <a href="https://github.com/lausser">Gerhard Lausser</a> 写的。<a href="http://folk.uio.no/trondham/software/">check_hp_bladechassis</a> 似乎是挪威人写的。</p>
+
+<h2>HP 服务器硬件状态监控 (check_hpasm)</h2>
+
+<p>可以使用两种模式，check_nrpe方式和SNMP方式。两种方式都依赖HP的ProLiant Support Pack(PSP)软件包。</p>
+
+<p>check_nrpe方式需要修改NRPE和sudo配置：</p>
+
+<pre><code># vi /usr/local/nagios/etc/nrpe.cfg
+添加一行：
+command[check_hpasm]=/usr/local/nagios/libexec/check_hpasm
+载入新的配置：
+service xinetd reload
+
+# visudo
+注释一行：
+# Defaults    requiretty
+添加一行：
+nagios ALL=NOPASSWD:/sbin/hpasmcli,/usr/local/nagios/libexec/check_hpasm
+</code></pre>
+
+<p>SNMP方式，需要修改SNMP配置，允许监控服务器访问服务器的SNMP信息。Nagios服务端的配置，可以这样写：</p>
+
+<pre><code>define command {
+    command_name check_hpasm_snmp
+    command_line $USER1$/check_hpasm -H $HOSTADDRESS$ -C public
+}
+
+define servicegroup {
+    servicegroup_name hp_hardware
+    alias             HP Proliant Server Hardware Health
+}
+
+define service {
+    use           generic-service
+    name          hpasm-service
+    check_period  24x7
+    check_interval 10
+    retry_interval 1
+    max_check_attempts 1
+    notification_options w,c,u
+    register       0
+}
+
+# SNMP
+define service {
+    use           hpasm-service
+    servicegroups hp_hardware
+    host_name     host1,host2,...
+    service_description HP Hardware Health
+    check_command  check_hpasm_snmp
+}
+
+# check_nrpe
+define service {
+    use           hpasm-service
+    servicegroups hp_hardware
+    host_name     host1,host2,...
+    service_description HP Hardware Health
+    check_command check_nrpe!check_hpasm
+}
+</code></pre>
+
+<h2>HP 刀箱硬件状态监控 (check_hp_bladechassis)</h2>
+
+<p>通过SNMP监控。</p>
+
+<p>首先需要在刀箱配置里启用SNMP，然后在Nagios服务端配置：</p>
+
+<pre><code>define command {
+    command_name check_hp_bladechassis
+    command_line $USER1$/check_hp_bladechassis -H $HOSTADDRESS$
+}
+
+define service {
+    use           hpasm-service
+    servicegroups hp_hardware
+    host_name     host1,host2,...
+    service_description HP Blade Encloure Hardware Health
+    check_command check_nrpe!check_hpasm
+}
+</code></pre>
+
+</div>
+
+<div id="related">
+  <h2>Random Posts</h2>
+  <ul class="posts">
+    
+      <li><span>08 Oct 2013</span> &raquo; <a href="/posts/first-post.html">stat</a></li>
+    
+      <li><span>26 Aug 2013</span> &raquo; <a href="/posts/aix-large-pages.html">Oracle 数据库在 AIX 平台上启用大内存页</a></li>
+    
+      <li><span>05 Jul 2012</span> &raquo; <a href="/posts/oracle-data-guard-part2.html">Oracle 11g Data Guard 物理备库快速配置指南（下）</a></li>
+    
+      <li><span>26 Jun 2012</span> &raquo; <a href="/posts/oracle-data-guard-part1.html">Oracle 11g Data Guard 物理备库快速配置指南（上）</a></li>
+    
+      <li><span>13 Apr 2012</span> &raquo; <a href="/posts/linux-sar.html">Linux 下使用 Sar 简介</a></li>
+    
+  </ul>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_developer = 1;
+    var disqus_shortname = 'xlau';
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+
+	  <div id="footer">
+  Powered by <a href="https://github.com/mojombo/jekyll">Jekyll</a> and <a href="http://twitter.github.com/bootstrap/">Bootstrap</a>.  Last updated at 2013-10-08 14:11:33 +0800.
+</div>
+
+	</div>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+	<script src="/assets/js/app.js"></script>
+	<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-4770949-2']);
+  _gaq.push(['_setDomainName', 'xlau.org']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+      </body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>Markdown 标记语言指南</title>
+    <meta name="author" content="kyle x lau" />
+    <link href="http://kyle.xlau.org/atom.xml" rel="alternate" title="liyichao's Weblog" type="application/atom+xml" />
+
+    <!-- Homepage CSS -->
+    <link rel="stylesheet" href="/assets/css/bootstrap.min.css" type="text/css" media="screen" charset="utf-8" />
+    <link rel="stylesheet" href="/assets/css/bootstrap-responsive.css" type="text/css" media="screen" charset="utf-8" />
+    <link rel="stylesheet" href="/assets/css/app.css" type="text/css" media="screen" charset="utf-8" />
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+	<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+
+    <!-- syntax highlighting CSS -->
+    <link rel="stylesheet" href="/assets/css/syntax.css" type="text/css" media="screen" charset="utf-8" />
+
+    <link rel="shortcut icon" href="assets/ico/favicon.ico">
+      <!-- Fonts -->
+      <link href='http://fonts.googleapis.com/css?family=Yanone+Kaffeesatz' rel='stylesheet' type='text/css'>
+      </head>
+
+      <body>
+	<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+      <a class="brand" href="/">Kylexlau's Weblog</a>
+	<ul class="nav">
+	  <li class="active"><a href="/">Home</a></li>
+	  <li ><a href="/archive.html">Archive</a></li>
+	  <li ><a href="/categories.html">Categories</a></li>
+	  <li ><a href="/sitemap.html">Sitemap</a></li>
+	  <li ><a href="/about.html">About</a></li>
+	</ul>
+	<ul class="nav pull-right">
+	  <li ><a href="/atom.xml">Subscribe</a></li>
+	</ul>
+    </div>
+  </div>
+</div>
+
+	<div class="container">
+	  <div id="post">
+<h1>
+  <a href="/posts/markdown.html">Markdown 标记语言指南</a>
+</h1>
+<div class="authoring">
+  November 21, 2011
+</div>
+
+<h2>发明者</h2>
+
+<p>Markdown 的发明者是 John Gruber 和 Aaron Swartz，目标是 &ldquo;to write using an easy-to-read, easy-to-write plain text format, then convert it to structurally valid XHTML (or HTML)"。</p>
+
+<p>John Gruber 是一个作家，有计算机学士学位，苹果迷。他最有名的一个项目是 <a href="http://daringfireball.net/">Daring Fireball</a> 网站，一个主要写苹果产品相关信息的技术博客，从2006年4月开始，他全职维护此网站。</p>
+
+<p>Aaron Swartz 是一个非常年轻有为的家伙，一大把的经历和成绩。他的<a href="http://www.aaronsw.com/">个人网站</a>里列出了他的所有成绩。</p>
+
+<h2>语法</h2>
+
+<h3>标题</h3>
+
+<h4>Setext-style</h4>
+
+<p>使用等于号（<code>=</code>）和下杠（<code>_</code>）。</p>
+
+<h4>Atx-style</h4>
+
+<p>使用井号（<code>#</code>），一个井号是H1，两个是H2，依此类推。</p>
+
+<p>Atx 是 Aaron Swartz 发明的另一种文本标记语言。</p>
+
+<h3>列表</h3>
+
+<h4>无序列表</h4>
+
+<p>星号（<code>*</code>），加号（<code>+</code>），或者减号（<code>-</code>）都行。</p>
+
+<h4>有序列表</h4>
+
+<p>直接使用1、2、3这种数字。</p>
+
+<h3>链接</h3>
+
+<h4>行内</h4>
+
+<pre><code>This is an [example link](http://example.com/ "With a Title").
+</code></pre>
+
+<h4>引用</h4>
+
+<pre><code>I get 10 times more traffic from [Google][1] than from
+[Yahoo][2] or [MSN][3].
+
+[1]: http://google.com/        "Google"
+[2]: http://search.yahoo.com/  "Yahoo Search"
+[3]: http://search.msn.com/    "MSN Search"
+</code></pre>
+
+<h4>自动</h4>
+
+<p>用括号将链接或email地址括起来，就会自动生产链接。</p>
+
+<h3>图片</h3>
+
+<h4>行内</h4>
+
+<pre><code>![alt text](/path/to/img.jpg "Title")
+</code></pre>
+
+<h4>引用</h4>
+
+<pre><code>![alt text][id]
+
+[id]: /path/to/img.jpg "Title"
+</code></pre>
+
+<h3>代码</h3>
+
+<p>使用backtick quotes（`）。</p>
+
+<p>缩进四个字符或者一个tab。</p>
+
+<h3>引用</h3>
+
+<p>就像电子邮件里一样，使用大于号（<code>&gt;</code>）。</p>
+
+<pre><code>&gt; This is a blockquote.
+&gt;
+&gt; This is the second paragraph in the blockquote.
+&gt;
+&gt; ## This is an H2 in a blockquote
+</code></pre>
+
+<h3>强调</h3>
+
+<p>星号（<code>*</code>）或者下杠（<code>_</code>），一个星号代表斜体，两个星号代表粗体，三个星号是斜粗体，下杠一样。</p>
+
+<h3>横线</h3>
+
+<p>三个或三个以上的中杠（<code>-</code>），星号（<code>*</code>），下杠（<code>_</code>），产生一个<code>&lt;hr /&gt;</code> tag，也就是一条横线。</p>
+
+<h3>转义</h3>
+
+<p>可以对如下字符进行转义：</p>
+
+<ul>
+<li><code>\</code>   backslash</li>
+<li>`   backtick</li>
+<li><code>*</code>   asterisk</li>
+<li><code>_</code>   underscore</li>
+<li><code>{}</code>  curly braces</li>
+<li><code>[]</code>  square brackets</li>
+<li><code>()</code>  parentheses</li>
+<li><code>#</code>   hash mark</li>
+<li><code>+</code>   plus sign</li>
+<li><code>-</code>   minus sign (hyphen)</li>
+<li><code>.</code>   dot</li>
+<li><code>!</code>   exclamation mark</li>
+</ul>
+
+
+</div>
+
+<div id="related">
+  <h2>Random Posts</h2>
+  <ul class="posts">
+    
+      <li><span>08 Oct 2013</span> &raquo; <a href="/posts/first-post.html">stat</a></li>
+    
+      <li><span>26 Aug 2013</span> &raquo; <a href="/posts/aix-large-pages.html">Oracle 数据库在 AIX 平台上启用大内存页</a></li>
+    
+      <li><span>05 Jul 2012</span> &raquo; <a href="/posts/oracle-data-guard-part2.html">Oracle 11g Data Guard 物理备库快速配置指南（下）</a></li>
+    
+      <li><span>26 Jun 2012</span> &raquo; <a href="/posts/oracle-data-guard-part1.html">Oracle 11g Data Guard 物理备库快速配置指南（上）</a></li>
+    
+      <li><span>13 Apr 2012</span> &raquo; <a href="/posts/linux-sar.html">Linux 下使用 Sar 简介</a></li>
+    
+  </ul>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_developer = 1;
+    var disqus_shortname = 'xlau';
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+
+	  <div id="footer">
+  Powered by <a href="https://github.com/mojombo/jekyll">Jekyll</a> and <a href="http://twitter.github.com/bootstrap/">Bootstrap</a>.  Last updated at 2013-10-08 14:11:33 +0800.
+</div>
+
+	</div>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+	<script src="/assets/js/app.js"></script>
+	<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-4770949-2']);
+  _gaq.push(['_setDomainName', 'xlau.org']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+      </body>
+</html>

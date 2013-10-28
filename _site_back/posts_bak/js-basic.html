@@ -1,0 +1,195 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>JavaScript 基本概念</title>
+    <meta name="author" content="kyle x lau" />
+    <link href="http://kyle.xlau.org/atom.xml" rel="alternate" title="liyichao's Weblog" type="application/atom+xml" />
+
+    <!-- Homepage CSS -->
+    <link rel="stylesheet" href="/assets/css/bootstrap.min.css" type="text/css" media="screen" charset="utf-8" />
+    <link rel="stylesheet" href="/assets/css/bootstrap-responsive.css" type="text/css" media="screen" charset="utf-8" />
+    <link rel="stylesheet" href="/assets/css/app.css" type="text/css" media="screen" charset="utf-8" />
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+	<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+
+    <!-- syntax highlighting CSS -->
+    <link rel="stylesheet" href="/assets/css/syntax.css" type="text/css" media="screen" charset="utf-8" />
+
+    <link rel="shortcut icon" href="assets/ico/favicon.ico">
+      <!-- Fonts -->
+      <link href='http://fonts.googleapis.com/css?family=Yanone+Kaffeesatz' rel='stylesheet' type='text/css'>
+      </head>
+
+      <body>
+	<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+      <a class="brand" href="/">Kylexlau's Weblog</a>
+	<ul class="nav">
+	  <li class="active"><a href="/">Home</a></li>
+	  <li ><a href="/archive.html">Archive</a></li>
+	  <li ><a href="/categories.html">Categories</a></li>
+	  <li ><a href="/sitemap.html">Sitemap</a></li>
+	  <li ><a href="/about.html">About</a></li>
+	</ul>
+	<ul class="nav pull-right">
+	  <li ><a href="/atom.xml">Subscribe</a></li>
+	</ul>
+    </div>
+  </div>
+</div>
+
+	<div class="container">
+	  <div id="post">
+<h1>
+  <a href="/posts/js-basic.html">JavaScript 基本概念</a>
+</h1>
+<div class="authoring">
+  March 13, 2012
+</div>
+
+<h2>缘由</h2>
+
+<p>静态网页使用HTML和CSS就够了。动态网站，除了后端要有一种编程语言支持外，前端还需要用到JavaScript。最近几年，JavaScript领域出了很多新技术，如Google的V8、Node.js、CofferScript等等，还有无数的JavaScript框架。</p>
+
+<p>我个人的知识结构中，前端只有接触过HTML和CSS，后端主要是几种脚本语言，加操作系统和数据库相关的那些本职工作，JavaScript基本是一窍不通。对js的无知，导致我闲来想折腾下自己的博客，一涉及到改js相关的代码，就只能搜索一通然后复制粘贴了。</p>
+
+<p>于是决定要花点时间来熟悉下这js这个编程语言。</p>
+
+<h2>学习资料</h2>
+
+<p>两本书，<em>JvaScript: The Good Parts(Douglas Crockford)</em> 和 <em>Pragmatic Guide to Javascript</em>（主要讲js在浏览器端的常见用途）。</p>
+
+<p>js大牛<a href="http://javascript.crockford.com/">Douglas Crockford</a>有许多js相关的视频，有时间的时候应该看看。</p>
+
+<p>中文资料有《JavaScript内核》，<a href="http://www.icodeit.org/">邱俊涛</a>写的，免费电子书。</p>
+
+<h2>主要概念</h2>
+
+<h3>DOM</h3>
+
+<p>DOM(Document Object Model)是浏览器的API。大部分牛人都如说这个API很烂。</p>
+
+<p>js对DOM的主要操作：</p>
+
+<ul>
+<li>获取要操作的元素</li>
+<li>改动元素（显示、隐藏、移动或修改元素内容）</li>
+</ul>
+
+
+<h3>JSON</h3>
+
+<p>基本每种编程语言都会提供一个可以存储键值对的数据结构，虽然名字不同，像Perl的<code>Hash</code>，Python的<code>dict</code>，Java的<code>Map</code>。他们也有一个统一的名字，叫做联合数组，<a href="http://en.wikipedia.org/wiki/Associative_array"><code>Associative array</code></a>.</p>
+
+<p>js中的对象使用<code>hash</code>表示。js中没有类的概念，只有对象。除了少数几个<code>primitives</code>(布尔值、数字、字符串、几个特殊常数)，js中一切都是对象。函数和其他任何对象在地位上没有区别，函数本身也是一个对象。</p>
+
+<p>JSON(JavaScript Object Notation)，JavaScript对象表示法，是js中用来表示对象的格式。发明者是Douglas Crockford。这是个好东西。</p>
+
+<p>JSON是用大括号括起来的键值对，也就是<code>Hash</code>，值可以是任意的JavaScript对象。JSON格式允许递归（它的值又可以是一个JSON表示的任意对象），可以用来表示任意复杂的数据形式。</p>
+
+<p>对象用<code>{}</code>表示，数组用<code>[]</code>表示。</p>
+
+<p>两种访问对象属性的方法：</p>
+
+<ul>
+<li>点表示法，dot notation, <code>obj.prop</code></li>
+<li>中括号表示法，bracket notation, <code>obj['prop']</code></li>
+</ul>
+
+
+<h3>Prototype Chain</h3>
+
+<p>通过使用prototype(原型)，js建立传统OO语言中的继承，从而体现对象的层次关系。每个对象都有一个prototype属性，prototype本身也是对象，它又有prototype。默认对象的prototype是Object，Object的prototype是空对象null.</p>
+
+<h3>函数式编程</h3>
+
+<h4>闭包(Closure)</h4>
+
+<p>函数func内定义函数inner，然后在函数外部调用inner，这个过程就产生一个闭包。</p>
+
+<h4>匿名函数(Lambda Expression)</h4>
+
+<p>匿名函数就是没有名字的函数。</p>
+
+<h4>高阶函数</h4>
+
+<p>以一个或多个函数为参数的函数为高阶函数。C语言可以通过函数指针实现高阶函数。</p>
+
+<h4>柯里化</h4>
+
+<p>预先将函数的某些参数传入，得到一个简单的函数。这个概念还最陌生，没有理解。</p>
+
+<h4>Y-Combinator</h4>
+
+<p>使用Y结合子，可以做到对匿名函数使用递归。</p>
+
+<h2>下一步</h2>
+
+<ul>
+<li>学习掌握至少一个框架，如jQuery。</li>
+<li>学学CafferScript。</li>
+<li>了解了解Node.js。</li>
+</ul>
+
+
+</div>
+
+<div id="related">
+  <h2>Random Posts</h2>
+  <ul class="posts">
+    
+      <li><span>08 Oct 2013</span> &raquo; <a href="/posts/first-post.html">stat</a></li>
+    
+      <li><span>26 Aug 2013</span> &raquo; <a href="/posts/aix-large-pages.html">Oracle 数据库在 AIX 平台上启用大内存页</a></li>
+    
+      <li><span>05 Jul 2012</span> &raquo; <a href="/posts/oracle-data-guard-part2.html">Oracle 11g Data Guard 物理备库快速配置指南（下）</a></li>
+    
+      <li><span>26 Jun 2012</span> &raquo; <a href="/posts/oracle-data-guard-part1.html">Oracle 11g Data Guard 物理备库快速配置指南（上）</a></li>
+    
+      <li><span>13 Apr 2012</span> &raquo; <a href="/posts/linux-sar.html">Linux 下使用 Sar 简介</a></li>
+    
+  </ul>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_developer = 1;
+    var disqus_shortname = 'xlau';
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+
+	  <div id="footer">
+  Powered by <a href="https://github.com/mojombo/jekyll">Jekyll</a> and <a href="http://twitter.github.com/bootstrap/">Bootstrap</a>.  Last updated at 2013-10-08 14:11:33 +0800.
+</div>
+
+	</div>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+	<script src="/assets/js/app.js"></script>
+	<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-4770949-2']);
+  _gaq.push(['_setDomainName', 'xlau.org']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+      </body>
+</html>

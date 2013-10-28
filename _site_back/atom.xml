@@ -1,0 +1,2331 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+ <title>Liyichao's Weblog</title>
+ <link href="http://kyle.xlau.org/atom.xml" rel="self"/>
+ <link href="http://kyle.xlau.org/"/>
+ <updated>2013-10-08T14:11:33+08:00</updated>
+ <id>http://kyle.xlau.org</id>
+ <author>
+   <name>kyle x lau</name>
+   <email>kyle@xlau.org</email>
+ </author>
+
+ 
+ <entry>
+   <title>stat</title>
+   <link href="http://kyle.xlau.org/posts/first-post.html"/>
+   <updated>2013-10-08T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/first-post</id>
+   <content type="html">&lt;p&gt;在类成员函数里写&lt;code&gt;int dp[len]&lt;/code&gt;没有用&lt;code&gt;memset&lt;/code&gt;初始化，以为它会自动初始化为0，结果看到它初始化为1，不是很大或很小的数，坑爹啊！&lt;/p&gt;
+
+&lt;p&gt;判断文件是否是符号链接，应该用&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;(buf.st_mode &amp;amp; S_IFLNK) == S_IFLNK
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;因为&lt;code&gt;S_IFLNK&lt;/code&gt;和&lt;code&gt;S_IFREG&lt;/code&gt;有一位是重的，如果用&lt;/p&gt;
+
+&lt;pre&gt;buf.st_mode &amp; S_IFLNK&lt;/pre&gt;
+
+
+&lt;p&gt;的话，普通文件也会被认为是符号链接文件。&lt;/p&gt;
+
+&lt;p&gt;APUE上判断文件类型是&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;swicth(buf-&amp;gt;st_mode &amp;amp; S_IFMT) {
+  case S_IFREG: nreg++; break;
+  case S_IFLNK: nslink++; break;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;用&lt;code&gt;stat&lt;/code&gt;在符号链接文件上，一直想，为什么判断不出是符号链接，原来&lt;code&gt;stat&lt;/code&gt;是跟随符号链接的，要用&lt;code&gt;lstat&lt;/code&gt;才好。&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Oracle 数据库在 AIX 平台上启用大内存页</title>
+   <link href="http://kyle.xlau.org/posts/aix-large-pages.html"/>
+   <updated>2013-08-26T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/aix-large-pages</id>
+   <content type="html">&lt;h2&gt;修改用户属性&lt;/h2&gt;
+
+&lt;h1&gt;官方文档只要求如下两个，但有些文档说 CAP_NUMA_ATTACH 也需要&lt;/h1&gt;
+
+&lt;pre&gt;&lt;code&gt;chuser capabilities=CAP_BYPASS_RAC_VMM,CAP_PROPAGATE oracle
+
+# 如果是 RAC 环境，还需要修改root用户
+chuser capabilities=CAP_BYPASS_RAC_VMM,CAP_PROPAGATE root
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2&gt;修改 VMM 参数&lt;/h2&gt;
+
+&lt;pre&gt;&lt;code&gt;# 执行下述命令前先关闭数据库，不然内存大内存页分配不出来。一般系统不需重启。
+# num_of_large_pages = INT((total_SGA_size-1)/16MB)+1
+vmo -p -o lgpg_regions=num_of_large_pages -o lgpg_size=16777216
+
+# AIX 6.1 下默认为0，尽可能不对计算内存换页
+vmo -p -o lru_file_repage=0
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;IBM 对&lt;code&gt;lru_file_repage&lt;/code&gt;参数的官方解释：&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;p&gt;lru_file_repage – when the number of permanent memory pages (numperm) falls between minperm and maxperm (or the number of client memory pages falls between minperm and maxclient), this setting indicates whether repaging rates are considered when deciding to evict permanent memory pages or computational memory pages. Setting this to 0 tells AIX to ignore repaging rates and favor evicting permament memory pages, keeping more computational memory in RAM. The AIX 5L default is 1/true (consider the repaging rate), The AIX 6.1 default is 0/false (now a restricted setting).&lt;/p&gt;&lt;/blockquote&gt;
+
+&lt;h2&gt;修改 Oracle 参数&lt;/h2&gt;
+
+&lt;pre&gt;&lt;code&gt;alter system set lock_sga=ture scope=spfile sid=&#39;*&#39;;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;如果是版本为10.2.0.4的数据库，还需要打一个小补丁，补丁号是7226548。&lt;/p&gt;
+
+&lt;h2&gt;参考文档&lt;/h2&gt;
+
+&lt;p&gt;具体查询 Oracle 官方支持网站：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;How to enable Large Page Feature on AIX-Based Systems (Doc ID
+372157.1)&lt;/li&gt;
+&lt;li&gt;Bug 7226548 &amp;ndash; AIX: 10.2.0.4 does not use large pages (Doc ID
+7226548.8)&lt;/li&gt;
+&lt;li&gt;SGA Not Pinned In The AIX Large Pages When Instance Is Started With
+Srvctl (Doc ID 369424.1)&lt;/li&gt;
+&lt;/ul&gt;
+
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Oracle 11g Data Guard 物理备库快速配置指南（下）</title>
+   <link href="http://kyle.xlau.org/posts/oracle-data-guard-part2.html"/>
+   <updated>2012-07-05T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/oracle-data-guard-part2</id>
+   <content type="html">&lt;h2&gt;第二部分&lt;/h2&gt;
+
+&lt;h3&gt;作者介绍&lt;/h3&gt;
+
+&lt;p&gt;作者 Jed Walker 是科罗拉多 Centennial Comcast 媒体中心的数据操作经理(Manager of Databse Operation)。他从1997年开始做 Oracle 数据库相关工作，是9i, 10g和11g的OCP。&lt;/p&gt;
+
+&lt;h3&gt;简介&lt;/h3&gt;
+
+&lt;p&gt;本文的第一部分讲解了如何配置一个基本的 Data Guard 环境。在第二部分里，我将介绍主备切换、故障转移(数据库和客户端）等其他主题。&lt;/p&gt;
+
+&lt;h3&gt;回顾&lt;/h3&gt;
+
+&lt;p&gt;在本文第一部分中，我们配置了一个物理备库。在这第二部分中，我将介绍主备切换(Switchover)，故障转移(Failover)，客户端故障转移(Client Failover)，使用闪回数据库重建库，活动数据卫士(Active Data Guard)，还讨论了一点备份。&lt;/p&gt;
+
+&lt;h3&gt;故障转移配置&lt;/h3&gt;
+
+&lt;p&gt;现在你已经配好了一个物理备库，你可能想试试主备切换(switchover)，甚至故障转移(failover)，但你先得确定客户端会跟着切换和转移。我们需要配置数据库和客户端来支持这些功能。要确定你的客户端能连接到正确的数据库，你要在数据库里配置一个支持故障转移的服务，并配置客户端的 TNS，让它知道如何在一个 Data Guard 集群里找到主库。&lt;/p&gt;
+
+&lt;p&gt;首先，创建一个支持故障转移的服务。我们要创建此服务，确定它在主库上启动，并确定它只在主库上启动。创建服务使用如下 SQL：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;begin
+    DBMS_SERVICE.CREATE_SERVICE (
+        service_name =&amp;gt; &#39;JED_RW&#39;,
+        network_name =&amp;gt; &#39;JED_RW&#39;,
+        aq_ha_notifications =&amp;gt; TRUE,
+        failover_method =&amp;gt; &#39;BASIC&#39;,
+        failover_type =&amp;gt; &#39;SELECT&#39;,
+        failover_retries =&amp;gt; 30,
+        failover_delay =&amp;gt; 5);
+end; /
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;此服务在数据库出现故障时会发送通知给客户端，允许查询语句在故障转移发生后继续运行。我使用命名 &lt;code&gt;SID_RW&lt;/code&gt; 显示这时一个可读写的数据库（主库）。&lt;/p&gt;
+
+&lt;p&gt;下一步是确定新创建的服务永远只在主库运行。我们创建一个存储过程来实现此目的，如果当前数据库是主库它就启动此服务，如果是备库就停止。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;create or replace procedure cmc_taf_service_proc
+is
+    v_role VARCHAR(30);
+begin
+    select DATABASE_ROLE into v_role from V$DATABASE;
+    if v_role = &#39;PRIMARY&#39; then
+        DBMS_SERVICE.START_SERVICE(&#39;JED_RW&#39;);
+    else
+        DBMS_SERVICE.STOP_SERVICE(&#39;JED_RW&#39;);
+    end if;
+end;
+/
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;然后创建两个触发器，让数据库在启动和角色转换时运行此存储过程。我参考的文档，只提到建立一个触发器（角色转换时）。如果只创建一个，当你重启你的数据库时，它不会重启故障转移服务。所以我创建两个：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;create or replace TRIGGER cmc_taf_service_trg_startup
+after startup on database
+begin
+    cmc_taf_service_proc;
+end;
+/
+
+create or replace TRIGGER cmc_taf_manage_trg_rolechange
+after db_role_change on database
+begin
+    cmc_taf_service_proc;
+end;
+/
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;现在我们执行一次存储过程，确定服务正在运行，并归档当前日志，让以上更改同步到备库。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; exec cmc_taf_service_proc;
+SQL&amp;gt; alter system archive log current;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;我们现在有了一个叫 &lt;code&gt;JED_RW&lt;/code&gt; 的服务，可以让客户端连接。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; show parameter service_names
+
+NAME             TYPE        VALUE
+---------------- ----------- ------------
+service_names    string      JED_RW
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;有这个服务名存在还不够，你必须配置客户端的 TNS 名去连接它。客户端的 TNS 名应该类似如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;JED_RW =
+  (DESCRIPTION =
+    (ADDRESS_LIST=
+        (ADDRESS = (PROTOCOL = TCP)(HOST = dev-db1)(PORT = 1521))
+        (ADDRESS = (PROTOCOL = TCP)(HOST = dev-db2)(PORT = 1521))
+    )
+    (CONNECT_DATA = (SERVICE_NAME = JED_RW)
+        (FAILOVER_MODE=(TYPE=SELECT)(METHOD=BASIC)(RETRIES=30)(DELAY=5))
+    )
+  )
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这个 TNS 名里包含 Data Guard 配置里的两个主机，使用 &lt;code&gt;JED_RW&lt;/code&gt; 服务名确定连接到主库。&lt;/p&gt;
+
+&lt;p&gt;如果你想连接特定的数据库，不管它是主是备，可以使用标准的 TNS 名，如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;JED =
+  (DESCRIPTION_LIST=
+    (DESCRIPTION =
+      (ADDRESS = (PROTOCOL = TCP)(HOST = dev-db1)(PORT = 1521))
+      (CONNECT_DATA = (SERVICE_NAME = JED))
+    )
+  )
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;当你的客户端使用新 TNS 名后，它们能在主备切换和故障转移操作后找到主库。如果客户端在运行一个查询，并且没有 &lt;code&gt;DML&lt;/code&gt; 是在一个交易中，那在发生切换操作后，只要主备转换和故障转移在超过最大重试次数前完成，这个查询会继续工作，只是会有延迟。你应该多做几次切换实验，以确定 &lt;code&gt;RETRIES&lt;/code&gt; 和 &lt;code&gt;DELAY&lt;/code&gt; 参数如何设置合适。如果有一个正在进行中的交易，当客户端连接到新的主库后，查询将报错（`ORA-25403: transaction must roll back），并回滚。&lt;/p&gt;
+
+&lt;h3&gt;进行主备切换(Switchover)&lt;/h3&gt;
+
+&lt;p&gt;现在你准备好做一次主备切换了，做之前先做些检查。首先在主库确认没有日志缺口：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; select STATUS, GAP_STATUS from V$ARCHIVE_DEST_STATUS where DEST_ID = 2;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;应该返回 &lt;code&gt;VALID&lt;/code&gt; 和 &lt;code&gt;NO GAP&lt;/code&gt;。&lt;/p&gt;
+
+&lt;p&gt;查询&lt;code&gt;v$tempfile&lt;/code&gt;视图确认备库的临时文件和主库一样。&lt;/p&gt;
+
+&lt;p&gt;删除 &lt;code&gt;LOG_ARCHIVE_DEST_N&lt;/code&gt; 参数中的所有延迟应用重做日志设置，你要确认所有变化都在备库应用，才能确保无数据丢失。确认所有重做日志都已在备库应用，查询备库：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; select NAME, VALUE, DATUM_TIME from V$DATAGUARD_STATS;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;不应该返回 &lt;code&gt;transport lag&lt;/code&gt; 或 &lt;code&gt;apply lag&lt;/code&gt;, &lt;code&gt;finish time&lt;/code&gt; 应该为0.&lt;/p&gt;
+
+&lt;p&gt;检查完这些先决条件后，确认主库可以进行角色切换，查询主库：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; select SWITCHOVER_STATUS from V$DATABASE;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;如果返回 &lt;code&gt;TO STANDBY&lt;/code&gt; 或 &lt;code&gt;SESSIONS ACTIVE&lt;/code&gt;，那么主库就可以进行切换。切换主库为备库命令为：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; alter database commit to switchover to physical standby with session shutdown;
+SQL&amp;gt; shutdown immediate;
+SQL&amp;gt; startup mount;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;然后查询备库是否可以切换为主库，查询备库：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; select SWITCHOVER_STATUS from V$DATABASE;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;如果返回 &lt;code&gt;TO PRIMARY&lt;/code&gt; 或 &lt;code&gt;SESSIONS ACTIVE&lt;/code&gt;，就可以切换。如果返回 &lt;code&gt;SWITCHOVER LATENT&lt;/code&gt; 或 &lt;code&gt;SWITCHOVER PENDING&lt;/code&gt;，就要去检查告警日志，看有什么问题，一般是需要应用一些日志。如果是需要应用日志的话，在备库执行如下命令：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; recover standby database using backup controlfile;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;在应用日志前应该是 &lt;code&gt;SWITCHOVER PENDING&lt;/code&gt; 状态，完成应用后，会变成 &lt;code&gt;TO PRIMARY&lt;/code&gt; 或 &lt;code&gt;SESSIONS ACTIVE&lt;/code&gt;状态。&lt;/p&gt;
+
+&lt;p&gt;现在可以切换备库为主库了：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; alter database commit to switchover to primary with session shutdown;
+SQL&amp;gt; alter database open;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;完成主备切换后，在备库上启用日志应用：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; alter database recover managed standby database using current logfile
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;disconnect from session;&lt;/p&gt;
+
+&lt;h3&gt;进行故障转移(Failover)&lt;/h3&gt;
+
+&lt;p&gt;故障转移，一般用在主库发生故障后需要恢复服务的情况下。故障转移将备库转换为主库，但不把原主库（有故障，无法正常工作）切换为备库。当故障转移发生后，你必须重建主库，或者使用闪回数据库功能将主库回退到故障发生前，然后转换其为备库并启用日志应用。&lt;/p&gt;
+
+&lt;p&gt;我将故障转移分为三类：优雅、几乎优雅和标准。分类标准是主库故障的严重程度。故障转移不会是优雅的，但是你对故障的应对可以是优雅的。注意这些分类不是 Oracle 的官方分类，我个人创造这些分类用来代表故障转移的三个不同阶段。&lt;/p&gt;
+
+&lt;h4&gt;优雅的故障转移&lt;/h4&gt;
+
+&lt;p&gt;如果当前备库是处于最大保护（maximum protection）模式，要进行故障转移，必须先修改为最大性能（maximum performance）模式。修改方法：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; alter database set standby database to maximize performance;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;如果你还能将主库启动到挂载（mount）状态，你可以试着将刷新未传输的日志到备库。如果你能刷新，故障转移可能不会丢失任何数据。在本文中，我们上一节主备切换主库到了 &lt;code&gt;JED2&lt;/code&gt;，我们现在故障转移回 &lt;code&gt;JED&lt;/code&gt;：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; startup mount
+SQL&amp;gt; alter system flush redo to &#39;JED&#39;;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;如果以上命令正常，日志已经传输到备库，我们需要在备库上应用它们。在下一节里，我们要确认所有重做日志是否都传输到了备库。&lt;/p&gt;
+
+&lt;h4&gt;几乎优雅的故障转移&lt;/h4&gt;
+
+&lt;p&gt;为了尽可能少的丢失数据，你应该尝试将所有归档日志应用。你应该将主库上的所有归档日志复制到备库。可能有一些归档日志已经在备库存在，但这样你能有尽可能多的归档日志。然后你要解决备库中的任何日志缺口。&lt;/p&gt;
+
+&lt;p&gt;首先，复制所有主库的归档到备库，并在数据库中注册它们：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; alter database register physical logfile &#39;&amp;amp;logfile_path_name&#39;;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;检查是否有日志缺口：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; select THREAD#, LOW_SEQUENCE#, HIGH_SEQUENCE# from V$ARCHIVE_GAP;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;如果有缺口存在，而主库上还有此日志文件，复制过来并注册。&lt;/p&gt;
+
+&lt;h4&gt;标准故障转移&lt;/h4&gt;
+
+&lt;p&gt;在备库停止日志应用：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; ALTER DATABASE RECOVER MANAGED STANDBY DATABASE CANCEL;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;结束应用任何日志：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; ALTER DATABASE RECOVER MANAGED STANDBY DATABASE FINISH;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;如果以上命令有任何报错，检查相关告警日志和跟踪信息。一旦你执行了这个命令，备库就必须转换为主库，要不就得重建。&lt;/p&gt;
+
+&lt;p&gt;检查备库是否能转换为主库，执行：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; select SWITCHOVER_STATUS from V$DATABASE;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;查询应该要返回 &lt;code&gt;TO PRIMARY&lt;/code&gt; 或 &lt;code&gt;SESSIONS ACTIVE&lt;/code&gt;，不然你可能还没有应用完所有日志。确认你执行了 &lt;code&gt;RECOVER...FINISH&lt;/code&gt;命令。&lt;/p&gt;
+
+&lt;p&gt;转换备库为主库：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; alter database commit to switchover to primary with session shutdown;
+SQL&amp;gt; alter database open;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;如果你有不止一个备库，你需要在其他备库上重启日志应用。下一步是重建原主库。如果配置了闪回数据库，重建会比较容易。&lt;/p&gt;
+
+&lt;h3&gt;使用闪回数据库重建库&lt;/h3&gt;
+
+&lt;p&gt;现在你已经进行了故障转移，原主库需要重建为备库。使用闪回数据库重建原主库，首先需要获得原备库转换为主库时的 &lt;code&gt;SCN&lt;/code&gt;。查询现主库：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; SELECT to_char(STANDBY_BECAME_PRIMARY_SCN) from V$DATABASE;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;有了这个 &lt;code&gt;SCN&lt;/code&gt;，你就可以使用闪回数据库功能将原主库回退到故障转移发生的时间点。在原主库上执行：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; SHUTDOWN IMMEDIATE;
+SQL&amp;gt; STARTUP MOUNT;
+SQL&amp;gt; FLASHBACK DATABASE TO SCN &amp;amp;standby_became_primary_scn;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;如果没有开始闪回日志，最后一条命令会报错 &lt;code&gt;ORA-38726: Flashback database logging is not on.&lt;/code&gt;，无法进行闪回。你就需要重新从新主库复制数据，重建原主库为备库。&lt;/p&gt;
+
+&lt;p&gt;如果命令成功执行，原主库就可以使用新主库的日志进行恢复。将原主库转换成物理备库，并启动日志应用进程：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; ALTER DATABASE CONVERT TO PHYSICAL STANDBY;
+SQL&amp;gt; SHUTDOWN IMMEDIATE;
+SQL&amp;gt; STARTUP MOUNT;
+SQL&amp;gt; ALTER DATABASE RECOVER MANAGED STANDBY DATABASE USING CURRENT LOGFILE DISCONNECT FROM SESSION;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;然后就可以在新主库切换一次日志，查看新备库的日志应用是否正常，具体命令在本文第一部分。&lt;/p&gt;
+
+&lt;h3&gt;客户端故障转移&lt;/h3&gt;
+
+&lt;p&gt;我很喜欢的一个功能是，当主备切换或故障转移发生后，客户端能够自动重连。在你的系统里，做下述实验，看结果如何。&lt;code&gt;JED&lt;/code&gt; 是主库，&lt;code&gt;JED2&lt;/code&gt; 是备库。客户端使用支持故障转移的 &lt;code&gt;JED_RW&lt;/code&gt; 服务名。&lt;/p&gt;
+
+&lt;p&gt;首先，用 SYSTEM 用户和 &lt;code&gt;JED_RW&lt;/code&gt; 服务名在 &lt;code&gt;SQL*Plus&lt;/code&gt; 里登录主库：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; connect system@jed_rw
+SQL&amp;gt; select db_unique_name from v$database;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;查询应该返回主库名 &lt;code&gt;JED&lt;/code&gt;。然后做一次主备切换，在将备库转换为主库 &lt;code&gt;alter database commit to switchover to primary with session shutdown;&lt;/code&gt; 这一步时，主备库均处于 &lt;code&gt;MOUNT&lt;/code&gt; 状态。然后执行查询：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; select db_unique_name from v$database;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这时查询应该挂住，这是因为客户端正在尝试寻找主库，但当前又没有可用的主库。然后继续完成主备切换。&lt;/p&gt;
+
+&lt;p&gt;当主备切换完成后，客户端应该会重连并重新执行查询，查询完成后成功返回结果 &lt;code&gt;JED2&lt;/code&gt;，因为现在主库已经切换为 &lt;code&gt;JED2&lt;/code&gt;，不再是 &lt;code&gt;JED&lt;/code&gt;。另一个很酷的测试方法是，执行一个执行时间非常长的查询，当查询结果返回，屏幕一直滚动时开始主备切换。你应该会看到屏幕暂停滚动一段时间，当切换完成后，又会继续滚动。&lt;/p&gt;
+
+&lt;h3&gt;活动数据卫士(Active Data Guard)&lt;/h3&gt;
+
+&lt;p&gt;警告！活动数据卫士功能需要单独的授权。虽然打开此功能很容易，如果没有授权，你不应该使用它。&lt;/p&gt;
+
+&lt;p&gt;活动数据卫士是 11g 的新功能，它允许你的物理备库在应用日志时处于只读打开状态。这明显是一个很有用的功能。能够允许主库有一个物理备库作为备份，并能在保持备库数据更新的同时读取备库，这是一个很好的功能。Oracle 也知道，所以这个功能需要单独买授权。&lt;/p&gt;
+
+&lt;p&gt;开启活动数据卫士功能十分容易。你只需要打开在你的数据库后再启动日志应用：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; STARTUP MOUNT
+SQL&amp;gt; ALTER DATABASE OPEN;
+SQL&amp;gt; ALTER DATABASE RECOVER MANAGED STANDBY DATABASE USING CURRENT LOGFILE DISCONNECT;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;之后你就可以登录备库，并执行查询。你可以执行如下查询确认：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; SELECT name status, database_role, open_mode logins, log_mode FROM v$instance, v$database;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;在开启活动数据卫士功能后，查询应该返回 &lt;code&gt;PHYSICAL STANDBY&lt;/code&gt;，&lt;code&gt;READ ONLY WITH APPLY&lt;/code&gt; 和 &lt;code&gt;ARCHIVELOG&lt;/code&gt;。&lt;/p&gt;
+
+&lt;p&gt;当你开启活动数据卫士功能后，你需要允许用户根据需要连接到正确的数据库。我创建第二个服务叫 &lt;code&gt;SID_RO&lt;/code&gt;，并让它只在备库启动。这个名字显示你连接的是一个只读（Read Only）数据库，而不是读写数据库。这个服务名的创建跟 &lt;code&gt;SID_RW&lt;/code&gt; 类似：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;begin
+    DBMS_SERVICE.CREATE_SERVICE (
+        service_name =&amp;gt; &#39;JED_RO&#39;,
+        network_name =&amp;gt; &#39;JED_RO&#39;,
+        aq_ha_notifications =&amp;gt; TRUE,
+        failover_method =&amp;gt; &#39;BASIC&#39;,
+        failover_type =&amp;gt; &#39;SELECT&#39;,
+        failover_retries =&amp;gt; 30,
+        failover_delay =&amp;gt; 5);
+end;
+/
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;修改原启动服务的存储过程：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;create or replace procedure cmc_taf_service_proc
+is
+  v_role VARCHAR(30);
+begin
+  select DATABASE_ROLE into v_role from V$DATABASE;
+  if v_role = &#39;PRIMARY&#39; then
+    begin
+      DBMS_SERVICE.STOP_SERVICE(&#39;JED_RO&#39;);
+    exception
+      when others then null;
+    end;
+    DBMS_SERVICE.START_SERVICE(&#39;JED_RW&#39;);
+  else
+    begin
+      DBMS_SERVICE.STOP_SERVICE(&#39;JED_RW&#39;);
+    exception
+      when others then null;
+    end;
+    DBMS_SERVICE.START_SERVICE(&#39;JED_RO&#39;);
+  end if;
+end;
+/
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;现在你有了一个活动数据卫士的配置，你的客户端能连接到合适的数据库实例，并可以在出现主备切换和故障转移时自动重连。&lt;/p&gt;
+
+&lt;h3&gt;备份&lt;/h3&gt;
+
+&lt;p&gt;最后，如果不讨论下备份，那对 &lt;code&gt;Data Guard&lt;/code&gt; 的介绍还不算完整。&lt;code&gt;Data Guard&lt;/code&gt; 实质上就是也是备份，但这不意味着你就不需要 &lt;code&gt;RMAN&lt;/code&gt; 备份了。你已经花时间去启用了强制记录日志，那你也应该做点备份。&lt;/p&gt;
+
+&lt;p&gt;有了 &lt;code&gt;Data Guard&lt;/code&gt;，你的 &lt;code&gt;RMAN&lt;/code&gt; 备份在主库或者备库都可以执行。但既然你已经配置了物理备库，你应该减轻点主库的负载。基本上，能在主库执行的标准的备份命令或脚本，也能在备库执行，但也有几个值得注意地方。这些 Oracle 官方文档都有，我只提几个关键的事情：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;你应该使用恢复目录（Recovery Catalog）。这是因为主库需要知道备库已经存在了哪些备份文件。你不需要在恢复目录中注册备库，恢复目录能认出它是备库。&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;你不能备份备库的控制文件，所以不要在主库关掉所有的备份，至少需要在主库备份控制文件和参数文件。&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;备份和恢复可以写一整篇文章，我只是讲下我是如何配置备份的，让你能从这里开始，修改并形成自己的策略。测试下，确认你能从你当前实现的备份设置中恢复。在运行备份前，你需要配置一些基本的东西。&lt;/p&gt;
+
+&lt;p&gt;确认开启控制文件和 &lt;code&gt;spfile&lt;/code&gt; 自动备份：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;RMAN&amp;gt; CONFIGURE CONTROLFILE AUTOBACKUP ON;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;根据你的需要设置备份文件保留策略：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;RMAN&amp;gt; CONFIGURE RETENTION POLICY TO RECOVERY WINDOW OF 3 DAYS;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;如果一个文件已经有备份，并且检查点 &lt;code&gt;SCN&lt;/code&gt; 相同，就不备份：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;RMAN&amp;gt; CONFIGURE BACKUP OPTIMIZATION ON;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;只在主库的归档日志已经在备库应用（或者配置为已经传输到备份）后才删除：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;RMAN&amp;gt; CONFIGURE ARCHIVELOG DELETION POLICY TO APPLIED ON ALL STANDBY;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;允许 &lt;code&gt;RMAN&lt;/code&gt; 在主备间重新同步：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;RMAN&amp;gt; CONFIGURE DB_UNIQUE_NAME P10AC CONNECT IDENTIFIER ‘JED’;
+RMAN&amp;gt; CONFIGURE DB_UNIQUE_NAME P11AC CONNECT IDENTIFIER &#39;JED2&#39;;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;在主库我仍然备份归档日志。首先，在主备库都备份归档提供了冗余。其次，当发生需要恢复的事件（比如数据文件下线等）后，我在主库已经有归档了。我需要删除过期的归档，以清理磁盘空间。在 &lt;code&gt;Data Guard&lt;/code&gt; 环境下，不能使用标准的在单机删除归档的命令，两者有一点小区别。因为我们必须使用恢复目录，我创建了一个全局脚本（global script）：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;create global script dg_primary_arch
+{
+    backup archivelog all;
+    delete noprompt archivelog all completed before &#39;sysdate-.5&#39;;
+    delete noprompt backup of archivelog all completed before &#39;sysdate-2&#39;;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;在备库我运行标准的全库和归档备份，并删除过期的备份集。在 &lt;code&gt;Data Guard&lt;/code&gt; 环境下，将备份归档包含在备份全库的命令里，会经常导致报错 &lt;code&gt;RMAN-08137: WARNING: archived log not deleted, needed for standby or upstream capture process&lt;/code&gt;。为避免此报错，你应该将备份归档放在单独的命令里。我还是创建一个全局脚本：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;create global script dg_standby_full
+{
+    backup database plus archivelog;
+    delete noprompt archivelog all completed before &#39;sysdate-1&#39;;
+    delete noprompt obsolete;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;另外一个有用的技巧是，如果可能，使用共享文件系统进行备份。这样你在两台服务器上都可以访问备份文件。这样，当你需要恢复时，你不需要从另一台服务器上复制文件了。但如果使用共享文件系统的话，你的归档备份虽然有两份，却都放在一个文件系统里，如果硬盘出现故障，两份备份都会丢失。&lt;/p&gt;
+
+&lt;h3&gt;总结&lt;/h3&gt;
+
+&lt;p&gt;Oracle 11g 的 &lt;code&gt;Data Guard&lt;/code&gt; 是一个很好的功能，配置起来相对容易，提供了在主库异常时故障转移的功能。它也能将主备的备份操作转移到备库执行，减轻主备负载。另外，&lt;code&gt;Data Guard Broker&lt;/code&gt; 是一个宣称能简化管理的工具，但介绍这个工具就得需要另外一篇文章了。&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Oracle 11g Data Guard 物理备库快速配置指南（上）</title>
+   <link href="http://kyle.xlau.org/posts/oracle-data-guard-part1.html"/>
+   <updated>2012-06-26T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/oracle-data-guard-part1</id>
+   <content type="html">&lt;h2&gt;缘起&lt;/h2&gt;
+
+&lt;p&gt;最近做了10g和11ｇ的物理备库配置实验，发现 Data Guard 其实很容易，但是缺少好文档。我是参考官方文档做的实验，觉得它写的不是很清楚的。&lt;/p&gt;
+
+&lt;p&gt;Google 出来两个pdf文档，读了觉得比官方文档强很多。翻译下，也许会对某些朋友有用。翻译的同时我也好更熟悉下这两个文档。好久没翻译过英文了，可以顺便练练手。&lt;/p&gt;
+
+&lt;p&gt;原文档下载地址（墙外）：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://tinky2jed.files.wordpress.com/2011/03/configure-dataguard-11gr2-physical-standby-part-i.pdf&quot;&gt;Configure Dataguard 11gR2 Physical Standby Part 1&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://tinky2jed.files.wordpress.com/2011/05/configure-dataguard-11gr2-physical-standby-part-ii1.pdf&quot;&gt;Configure Dataguard 11gR2 Physical Standby Part 2&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;h2&gt;第一部分&lt;/h2&gt;
+
+&lt;h3&gt;简介&lt;/h3&gt;
+
+&lt;p&gt;Data Guard 是 Oracle 数据库的一个功能，能够提供数据库的冗余。冗余是通过创建一个备用（物理复制）数据库实现，备库最好是在不同的地理位置或者在不同的磁盘上。备库通过应用主库上的变化来保持数据同步。备库可以使用重做日志应用(物理备库)或SQL应用同步(逻辑备库)。&lt;/p&gt;
+
+&lt;p&gt;本文旨在说明 Data Guard 的配置并不复杂，不需要特殊的技能或者培训才能学会搭建。它将快速展示给读者搭建一个物理备库的过程。我的目标是，即使你第一次接触 Data Guard，刚考虑要使用它或担心它会不会很难配置，本文将帮助你快速搭建起一个正常运行起来的物理备库。&lt;/p&gt;
+
+&lt;h3&gt;为什么使用 Data Guard&lt;/h3&gt;
+
+&lt;p&gt;每种 Oracle 高可用性工具都有其目的。使用 Data Guard 的理由有：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;整个数据库的冗余&lt;/li&gt;
+&lt;li&gt;故障时的快速恢复&lt;/li&gt;
+&lt;li&gt;故障后客户端能自动重连&lt;/li&gt;
+&lt;li&gt;在备库运行备份&lt;/li&gt;
+&lt;li&gt;较好的故障平均修复时间&lt;/li&gt;
+&lt;li&gt;并不复杂&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;h3&gt;系统环境&lt;/h3&gt;
+
+&lt;p&gt;在写完本文后，我使用 DBCA 创建了一个新数据库 &lt;code&gt;JED&lt;/code&gt;，然后重新运行了文中的配置步骤，确认其对一个基本的 Oracle 11g 数据库适用。主库叫 &lt;code&gt;JED&lt;/code&gt;，运行在一台叫 &lt;code&gt;dev-db1&lt;/code&gt;的服务器上。备库叫 &lt;code&gt;JED2&lt;/code&gt;，运行在一台叫 &lt;code&gt;dev-db2&lt;/code&gt; 的服务器上。&lt;/p&gt;
+
+&lt;h3&gt;不需要提的基本前提&lt;/h3&gt;
+
+&lt;p&gt;有一些任何生产库都应该有的基本的设置。其中一个就是归档模式。对于生产库，这应该是一个明显的必须配置。如果你的生产库没有适用归档模式，你要么需要马上开始读点书，要么你得有一个非常非常好的理由。我不大确定谁真能找出一个理由，但任何准则都有例外。&lt;/p&gt;
+
+&lt;p&gt;如何修改你的数据库为归档模式：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; shutdown immediate
+SQL&amp;gt; startup mount
+SQL&amp;gt; alter database archivelog;
+SQL&amp;gt; alter database open;
+SQL&amp;gt; archive log list;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;主库准备&lt;/h3&gt;
+
+&lt;p&gt;首先，备库要成为主库的完全相同的复制，它必须接收来自主库的重做日志。Oracle 数据库中，一个用户可以用指定某操作不产生日志(比如使用 &lt;code&gt;NOLOGGING&lt;/code&gt; 语句）。对于备库来说，这是个问题。你必须确认用户无法指示数据库不产生重做日志，这需要启用数据库的强制日志功能。启用方法如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; alter database force logging;
+SQL&amp;gt; select name, force_logging from v$database;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;你应该看到 &lt;code&gt;force_logging&lt;/code&gt; 列为 &lt;code&gt;YES&lt;/code&gt;。&lt;/p&gt;
+
+&lt;p&gt;其次，你要确认当主库添加或删除数据文件时，这些文件也会在备库添加或删除。启用此功能的方法如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; alter system set standby_file_management = &#39;AUTO&#39;;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;再次，我们要确认书库有备用日志文件(Standby Log Files)。备库使用备用日志文件来来保存从主库接收到的重做日志。主库上也建立备用日志文件有两个原因，一是主库可能转换成备库，备库需要备用日志，二是如果主库建了备用日志，备库会自动建。备用日志应该跟在线日志一样大，组数应该至少跟在线日志一样多，或者更多。我喜欢给备用日志一个跟在线日志不同范围的编号，比如在线日志组是1到6，备用日志就是11到16。创建备用日志的方法如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; alter database add standby logfile group 11 (&#39;/oradata/JED/g11m01.sdo&#39;,&#39;/oradata/JED/g11m02.sdo&#39;) size 50M;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;如果你不是使用 &lt;code&gt;SSL&lt;/code&gt; 做重做日志传输验证(一般来说不会)，那么你需要使用密码文件做验证。你必须创建密码文件，并且设置参数 &lt;code&gt;REMOTE_LOGIN_PASSWORDFILE&lt;/code&gt; 为 &lt;code&gt;EXCLUSIVE&lt;/code&gt; 或 &lt;code&gt;SHARED&lt;/code&gt;。一般数据库默认就有密码文件，并且此参数默认为 &lt;code&gt;EXECUSIVE&lt;/code&gt;。先检查下这两项，如果不是默认，设置方法如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; alter system set remote_login_passwordfile=exclusive scope=spfile;
+OS&amp;gt; orapwd password=&amp;lt;sys 用户密码&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;最后，检查数据库的 &lt;code&gt;db_unique_name&lt;/code&gt; 参数是否设置。如果没有，使用 &lt;code&gt;alter system&lt;/code&gt; 进行设置：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; show paramter db_unique_name;
+SQL&amp;gt; alter system set db_unique_name=some_name scope=spfile;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;闪回数据库&lt;/h3&gt;
+
+&lt;p&gt;我强烈建议开启数据库闪回功能。闪回允许你将数据库还原到以前的某一时间点。当发生故障转移时，这个功能非常有用，它能让你将老的主库闪回到故障前，然后将其转换为备库。如果没有启用闪回功能，你就必须重建备库，意味着要再复制一次数据文件。除了这个好处，闪回还能在某些情况下让你避免从备份恢复数据。&lt;/p&gt;
+
+&lt;p&gt;启用闪回功能，必须先配置快速恢复区(Flash/Fast Recovery Area). 方法如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; alter system set db_recovery_file_dest=&#39;&amp;amp;快速恢复区目录或ASM磁盘组名&#39;;
+SQL&amp;gt; alter system set db_recovery_file_dest_size=400G;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;配置好快速恢复区后，就可以启用闪回日志功能：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; alter database flashback on;
+SQL&amp;gt; select flashback_on from v$database;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;code&gt;FLASHBACK_ON&lt;/code&gt; 这列的值应该是 &lt;code&gt;YES&lt;/code&gt;。如果你碰到 &lt;code&gt;ORA-01153&lt;/code&gt; 报错，那一定是在备库进行此操作。你需要先取消重做日志应用，启用闪回日志，然后重新启用日志应用。&lt;/p&gt;
+
+&lt;p&gt;在主库启用闪回日志，不会同步备库也启用。你必须手动在主库和备库上均启用闪回日志。如果不启用闪回日志，当出现故障转移时，你将需要完全重新开始创建一个备库。&lt;/p&gt;
+
+&lt;h3&gt;SQL*NET 配置&lt;/h3&gt;
+
+&lt;p&gt;在创建备库前，要确认两台服务器的数据库之间能通信，如果我们要用 RMAN 的 &lt;code&gt;duplicate from active database&lt;/code&gt; 命令创建备库的话。我们需要配置监听和 TNS 名。你可以手动配置，也可以使用网络配置工具(netca)。我更喜欢手动配置，因为我比较老派，并且这些配置文件又不复杂，&lt;/p&gt;
+
+&lt;p&gt;首先需要配置主备库的监听。虽然数据库会自动注册监听，但如果要使用 RMAN 的 &lt;code&gt;duplicate&lt;/code&gt; 命令创建备库，备库必须首先处于 &lt;code&gt;NOMOUNT&lt;/code&gt; 状态。在 &lt;code&gt;NOMOUNT&lt;/code&gt; 状态下，数据库实例不会自动注册监听，你必须配置静态监听。另外必须要注意的一点是，&lt;code&gt;NOMOUNT&lt;/code&gt; 状态下的数据库必须使用专用模式(&lt;code&gt;dedicated server&lt;/code&gt;)连接。&lt;/p&gt;
+
+&lt;p&gt;两台服务器上的 TNS 名字文件必须配置好，让主备库能用 &lt;code&gt;LOG_ARCHIVE_DEST_N&lt;/code&gt; 和 &lt;code&gt;FAL_SERVER&lt;/code&gt; 参数（稍后会介绍这些参数）中的服务名(Service Names）找到对方。具体配置应类似下例。&lt;/p&gt;
+
+&lt;p&gt;主库(dev-db1)的监听配置：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SID_LIST_LISTENER=
+    (SID_LIST =
+        (SID_DESC =
+            (GLOBAL_DBNAME = JED)
+            (ORACLE_HOME = /oracle/product/11.2.0)
+            (SID_NAME = JED)
+        )
+    )
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;备库(dev-db2)的的监听配置：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SID_LIST_LISTENER=
+    (SID_LIST =
+        (SID_DESC =
+            (GLOBAL_DBNAME = JED2)
+            (ORACLE_HOME = /oracle/product/11.2.0)
+            (SID_NAME = JED2)
+        )
+    )
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;主库的 TNS 名字文件配置：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;JED2 =
+  (DESCRIPTION =
+    (ADDRESS = (PROTOCOL = TCP)(HOST = dev-db2)(PORT = 1521))
+    (CONNECT_DATA =
+      (SERVER = DEDICATED)
+      (SERVICE_NAME = JED2)
+    )
+  )
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;备库的 TNS 名字文件配置：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;JED =
+  (DESCRIPTION =
+    (ADDRESS = (PROTOCOL = TCP)(HOST = dev-db1)(PORT = 1521))
+    (CONNECT_DATA =
+      (SERVER = DEDICATED)
+      (SERVICE_NAME = JED)
+    )
+  )
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;重做日志传输配置&lt;/h3&gt;
+
+&lt;p&gt;现在主备库之间依旧可以互相通信了，下一步是配置归档位置和重做日志传输。我们将先在主库上进行配置，然后等备库创建好后，修改备库的配置。&lt;/p&gt;
+
+&lt;p&gt;配置归档位置：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; alter system set log_archive_dest_1 = &#39;location=use_db_recovery_file_dest valid_for=(all_logfiles, all_roles) db_unique_name=JED&#39;;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这个命令指定快速恢复区作为归档位置，此归档位置用于在所有数据库角色下归档所有的日志文件。官方文档里说使用 &lt;code&gt;valid_for=(online_logfiles, all_roles)&lt;/code&gt;，这将导致备库无法归档备用日志文件，因为它们不是在线日志。但如果使用 &lt;code&gt;all_logfiles&lt;/code&gt; 选项，主备库将都能归档在线以及备用日志。如果你想在备库进行备份，并同时备份归档日志的话，必须使用 &lt;code&gt;all_logfiles&lt;/code&gt;。&lt;/p&gt;
+
+&lt;p&gt;然后配置重做日志传输到备库：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; alter system set log_archive_dest_2 = &#39;service=JED2 async valid_for=(online_logfile,primary_role) db_unique_name=JED2&#39;;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这条语句说，如果这是主库，就使用服务名 &lt;code&gt;JED2&lt;/code&gt; 传输在线日志，目标库名叫 &lt;code&gt;JED2&lt;/code&gt;。&lt;/p&gt;
+
+&lt;p&gt;要注意&lt;code&gt;STANDBY_ARCHIVE_DEST&lt;/code&gt; 参数不需要，已经被官方弃用。当调试时，不少人好心建议我设置此参数，但设置此参数后启动数据库，只会报 &lt;code&gt;ORA-32004: obsolete or deprecated parameter(s) specified for RDBMS instance&lt;/code&gt; 错。&lt;/p&gt;
+
+&lt;p&gt;另一个要设置的参数是 &lt;code&gt;FAL_SERVER&lt;/code&gt;。这个参数指定当日志传输出现问题时，备库到哪里去找缺少的归档日志。它用在备库接收的到的重做日志间有缺口的时候。这种情况会发生在日志传输出现中断时，比如你需要对备库进行维护操作。在备库维护期间，没有日志传输过来，这时缺口就出现了。设置了这个参数，备库就会主动去寻找那些缺少的日志，并要求主库进行传输。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; alter system set fal_server = &#39;JED2&#39;;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;注意 &lt;code&gt;FAL_CLIENT&lt;/code&gt; 参数在11g里已经弃用。&lt;/p&gt;
+
+&lt;p&gt;然后我们要让主库知道 Data Guard 配置里的另外一个库的名字：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; alter system set log_archive_config = &#39;dg_config=(JED,JED2)&#39;;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这一步做完后，我们就可以准备好备库的环境，并开始创建备库了。&lt;/p&gt;
+
+&lt;h3&gt;备库环境准备&lt;/h3&gt;
+
+&lt;p&gt;现在开始准备备库环境。有很多种方法来执行这些步骤。我这里写的是我觉得最适合我的方法。你应该实验多种方法，看哪种比较适合你。&lt;/p&gt;
+
+&lt;p&gt;首先，我们要为备库创建密码文件和参数文件(spfile)。密码文件可以直接复制过去，只需要改下名字就行。比如，主库上的密码文件是 &lt;code&gt;$ORACLE_HOME/dbs/orapwJED&lt;/code&gt;。我们把它复制到备库服务器的相同位置，用备库的 &lt;code&gt;SID&lt;/code&gt; 取代主库，修改其名字为 &lt;code&gt;orapwJED2&lt;/code&gt;。&lt;/p&gt;
+
+&lt;p&gt;为了创建备库 &lt;code&gt;spfile&lt;/code&gt;，先创建一个启动参数文件(&lt;code&gt;pfile&lt;/code&gt;)：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; create pfile from spfile;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;我想介绍一个看起来挺不错新功能，使用 &lt;code&gt;RMAN&lt;/code&gt; 创建备库 &lt;code&gt;SPFILE&lt;/code&gt;。我不使用这个功能的理由是：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;反正我也需要复制密码文件到备库服务器，所以它并没有节省我复制文件的时间。&lt;/li&gt;
+&lt;li&gt;要使用这个功能，你仍然需要使用 &lt;code&gt;parameter_value_convert&lt;/code&gt; 参数做很多替换工作，还有使用 &lt;code&gt;SPFILE&lt;/code&gt; 语句和多个 &lt;code&gt;SET&lt;/code&gt; 语句以确保一切正确。&lt;/li&gt;
+&lt;/ol&gt;
+
+
+&lt;p&gt;我发现复制 &lt;code&gt;pfile&lt;/code&gt; 过去更容易(你甚至可以直接粘贴复制)，只要改下名字，然后改几个里面的参数就行。这很容易，你也可以在手动修改和调试的过程中学到很多。我发现手动改比用 &lt;code&gt;RMAN&lt;/code&gt; 的 &lt;code&gt;SPFILE&lt;/code&gt;创建功能更快。&lt;/p&gt;
+
+&lt;p&gt;创建好了主库的 &lt;code&gt;pfile&lt;/code&gt; 后，将其复制到备库服务器的相同位置，使用备库的 &lt;code&gt;SID&lt;/code&gt; 修改其名字。你需要对 &lt;code&gt;pfile&lt;/code&gt; 做如下修改：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;根据你备库的配置和文件位置，你可能需要修改 &lt;code&gt;AUDIT_FILE_DEST&lt;/code&gt;，&lt;code&gt;CONTROL_FILES&lt;/code&gt; 和 &lt;code&gt;DISPATCHERS&lt;/code&gt; 参数（也许还有其他需要修改的参数）。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;LOG_ARCHIVE_DEST_1&lt;/code&gt; 参数中的 &lt;code&gt;db_unique_name&lt;/code&gt; 修改为备库的相应唯一名（这里是 &lt;code&gt;JED2&lt;/code&gt;）。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;LOG_ARCHIVE_DEST_2&lt;/code&gt; 参数，修改为主库对应的服务名和数据库唯一名（这里是 &lt;code&gt;JED&lt;/code&gt;）。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;FAL_SERVER&lt;/code&gt; 参数修改指向主库的服务名。&lt;/li&gt;
+&lt;li&gt;增加如下参数：
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;db_unique_name=JED2&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;db_file_name_convert&lt;/code&gt; 和 &lt;code&gt;log_file_name_convert&lt;/code&gt;。如果主备库的数据文件、日志文件位置不同，需要设置这两个参数。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;然后在备库服务器上创建所需目录结构和修改相关文件。至少需要修改如下创建目录和文件：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;$ORACLE_BASE/admin/$ORACLE_SID&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;$ORACLE_BASE/admin/$ORACLE_SID/adump&lt;/code&gt;（&lt;code&gt;audit_file_dest&lt;/code&gt;配置的目录）&lt;/li&gt;
+&lt;li&gt;数据文件目录&lt;/li&gt;
+&lt;li&gt;控制文件目录&lt;/li&gt;
+&lt;li&gt;日志文件目录&lt;/li&gt;
+&lt;li&gt;快速恢复区目录&lt;/li&gt;
+&lt;li&gt;将备库信息加到 &lt;code&gt;/etc/oratab&lt;/code&gt; 文件&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;现在可以准备启动备库实例来创建数据库了。在启动过程中创建一个 &lt;code&gt;spfile&lt;/code&gt;。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; startup nomount pfile=initJED2.ora
+SQL&amp;gt; create spfile from pfile;
+SQL&amp;gt; shutdown
+SQL&amp;gt; startup nomount
+SQL&amp;gt; show parameter spfile
+SQL&amp;gt; exit
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;code&gt;show parameter spfile&lt;/code&gt; 显示 &lt;code&gt;spfile&lt;/code&gt; 的位置，这时备库处于 &lt;code&gt;NOMOUNT&lt;/code&gt; 状态。&lt;/p&gt;
+
+&lt;h3&gt;备库创建&lt;/h3&gt;
+
+&lt;p&gt;就像之前的步骤一样，创建数据库这一步也可以有多种方法。在11g中，我将使用 &lt;code&gt;RMAN&lt;/code&gt; 的复制功能，因为它很容易。在上一步里，我们复制了密码文件和参数文件到备库服务器，修改好了参数文件，并创建了 &lt;code&gt;spfile&lt;/code&gt;。这让使用 &lt;code&gt;RMAN&lt;/code&gt; 复制功能更加容易，当然，你也可以跳过手工复制密码和参数文件这步，让 &lt;code&gt;RMAN&lt;/code&gt; 使用 &lt;code&gt;SPFILE&lt;/code&gt;，&lt;code&gt;PARAMETER_VALUE_CONVERT&lt;/code&gt; 和 &lt;code&gt;SET&lt;/code&gt;等命令帮你自动完成。&lt;/p&gt;
+
+&lt;p&gt;使用 &lt;code&gt;RMAN&lt;/code&gt; 创建备库的命令非常简单。它指示 &lt;code&gt;RMAN&lt;/code&gt; 直接复制当前活动的数据库（主库）到辅助数据库（备库）。这样你就不需要现将主库的备份复制到备库服务器上，再还原数据库。在今天的存储技术下，我们有更快更简单的方式复制数据库，但为了展示11g的这个新功能，并且这个功能又很简单，我喜欢尽可能使用它。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;RMAN&amp;gt; connect target sys@JED
+RMAN&amp;gt; connect catalog &amp;lt;catalogowner&amp;gt;@&amp;lt;catalogdb&amp;gt;
+RMAN&amp;gt; connect auxiliary sys@JED2
+RMAN&amp;gt; duplicate target database for standby from active database;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;在 &lt;code&gt;11.2.0.2.0&lt;/code&gt; 版本后，你可以直接使用 &lt;code&gt;connect target&lt;/code&gt; 连接辅助数据库，但如果不指定用户名和密码，在复制到备库时将报 &lt;code&gt;invalid username/password&lt;/code&gt; 错。&lt;/p&gt;
+
+&lt;p&gt;当复制命令在执行时，我喜欢 &lt;code&gt;tail&lt;/code&gt; 备库的告警日志文件，观察复制进行到了哪一步和查看是否有报错。注意，针对在线和备用日志文件报 &lt;code&gt;ORA-27037: unable to obtain file status&lt;/code&gt; 错是正常的。&lt;/p&gt;
+
+&lt;p&gt;你也可以并行复制以提高性能。需要分派主库和备库多个通道后，再执行复制命令：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;run
+{
+    allocate channel chan1 type disk;
+    allocate channel chan2 type disk;
+    allocate channel chan3 type disk;
+    allocate channel chan4 type disk;
+    allocate auxiliary channel aux1 type disk;
+    allocate auxiliary channel aux2 type disk;
+    allocate auxiliary channel aux3 type disk;
+    allocate auxiliary channel aux4 type disk;
+    duplicate target database for standby from active database;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;如果一切正常，你将看到 &lt;code&gt;RMAN&lt;/code&gt; 报出类似如下信息：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;Finished Duplicate Db at 07-MAY-10
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;当备库复制完成后，我喜欢在备库启用闪回日志：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; alter database flashback on;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;启动重做日志应用&lt;/h3&gt;
+
+&lt;p&gt;启动或者停止重做日志应用非常容易。启动日志应用：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; ALTER DATABASE RECOVER MANAGED STANDBY DATABASE USING CURRENT LOGFILE
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;DISCONNECT FROM SESSION;&lt;/p&gt;
+
+&lt;p&gt;这个命令指示备库开始使用备用日志文件进行恢复。它也告诉备库命令完成后回到命令行界面。如果你想停止恢复：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; ALTER DATABASE RECOVER MANAGED STANDBY DATABASE CANCEL;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;确认日志应用正常&lt;/h3&gt;
+
+&lt;p&gt;你要确认重做日志正在应用到备库。首先我们要确认主备库里的归档目的地配置都是有效的：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; select DEST_ID, STATUS, DESTINATION, ERROR from V$ARCHIVE_DEST where DEST_ID&amp;lt;=2;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;目的地状态应该显示为 &lt;code&gt;VALID&lt;/code&gt;。&lt;/p&gt;
+
+&lt;p&gt;然后确认重做日志是否真的被应用了，在主库执行：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; select SEQUENCE#, FIRST_TIME, NEXT_TIME, APPLIED, ARCHIVED from V$ARCHIVED_LOG where name = &#39;JED2&#39; order by FIRST_TIME;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;如果归档和日志应用均正常，&lt;code&gt;APPLIED&lt;/code&gt; 和 &lt;code&gt;ARCHIVED&lt;/code&gt; 列都应该是 &lt;code&gt;YES&lt;/code&gt;。很多教程里都让这个查询以 &lt;code&gt;SEQUENCE#&lt;/code&gt; 列排序，但我不推荐。如果以 &lt;code&gt;SEQUENCE#&lt;/code&gt; 列排序，当你做了一次故障转移后，序列号会再从1开始，这时使用这个查询，你将不能在结果最后看到最新的记录。我曾经很奇怪为什么查不到新记录，其实是因为新记录不是出现在最后，我没看到。所以，这个查询都是以 &lt;code&gt;FIRST_TIME&lt;/code&gt; 列排序。&lt;/p&gt;
+
+&lt;p&gt;如果你发现日志没有被应用，那可能是重做日志有了缺口，这种情况下备库无法进行日志应用。但如果你的 &lt;code&gt;FAL_SERVER&lt;/code&gt; 参数设置正确，这应该不会有问题。你可以在主库上检查是否有重做日志缺口：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; select STATUS, GAP_STATUS from V$ARCHIVE_DEST_STATUS where DEST_ID = 2;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;如果一切正常，应该返回 &lt;code&gt;VALID&lt;/code&gt; 和 &lt;code&gt;NO GAP&lt;/code&gt;。如果你想测试下 &lt;code&gt;FAL_SERVER&lt;/code&gt; 这个参数是怎么工作的。可以先把备库关掉，然后在主库切换几次日志，等一会，启动备库，再切换一次日志。这样缺口很快就会出现。如果 &lt;code&gt;FAL_SERVER&lt;/code&gt; 设置正常，缺少的重做日志会被传输过来并应用。&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;V$DATAGUARD_STATUS&lt;/code&gt; 视图对查找错误和了解发生了什么非常有用。可以在主备库上执行以下查询查看数据库状态：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; select * from V$DATAGUARD_STATUS order by TIMESTAMP;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;有时候你手工想确认下数据真的同步了。一个更让人信服的方法是，直接查询备库，看新数据是否存在。你可以将备库打开为只读状态，首先取消日志应用，再执行如下命令：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; ALTER DATABASE OPEN READ ONLY;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这时你可以查询变化了的数据是否同步过来。11g已经支持活动备库，可以让数据库在只读状态下打开，同时启动日志应用。&lt;/p&gt;
+
+&lt;h3&gt;总结&lt;/h3&gt;
+
+&lt;p&gt;现在你有一个配置好的 &lt;code&gt;Data Guard&lt;/code&gt;，也就有了一个冗余的数据库。我不想留下主备转换、故障转移、重建库等不讲，这些主题将放到本文的第二部分。&lt;/p&gt;
+
+&lt;p&gt;我希望本文能帮助你更容易和更快速地创建你的 &lt;code&gt;Data Guard&lt;/code&gt; 环境。&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Linux 下使用 Sar 简介</title>
+   <link href="http://kyle.xlau.org/posts/linux-sar.html"/>
+   <updated>2012-04-13T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/linux-sar</id>
+   <content type="html">&lt;h2&gt;介绍&lt;/h2&gt;
+
+&lt;p&gt;Sar 最早是实现在 Salaris Unix 系统里，后来移植到了大部分其他的 Unix 系统（如AIX，HP-UX等）。Linux 下也有法国人写的 &lt;a href=&quot;http://sebastien.godard.pagesperso-orange.fr/&quot;&gt;sysstat&lt;/a&gt; 实现了这个工具的功能。&lt;/p&gt;
+
+&lt;p&gt;它的原理就是使用 cron 定期调度一个程序，收集当前系统各项性能指标，保存在二进制文件里。&lt;/p&gt;
+
+&lt;h2&gt;安装&lt;/h2&gt;
+
+&lt;p&gt;可以下载源码，自己编译安装，也可以安装二进制包。RHEL 系统默认已经安装。&lt;/p&gt;
+
+&lt;h2&gt;主要功能&lt;/h2&gt;
+
+&lt;p&gt;支持功能：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;可以收集几乎所有的系统性能数据。&lt;/li&gt;
+&lt;li&gt;可以配置历史数据的保留时间。&lt;/li&gt;
+&lt;li&gt;收集性能数据可以从二进制文件导出成不同格式文件（CSV、XML、JSON等）。&lt;/li&gt;
+&lt;li&gt;可以将性能数据绘图展现，有不少第三方工具，自带 isag。&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;h2&gt;配置&lt;/h2&gt;
+
+&lt;p&gt;修改历史数据保留时间：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;vi /etc/sysconfig/sysstat # redhat
+vi /etc/default/sysstat   # debian
+HISTORY=90 # 表示保留90天的历史数据
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;修改性能数据收集频率（就是修改cron调度频率），默认是10分钟一次：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;vi /etc/cron.d/sysstat
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2&gt;导出&lt;/h2&gt;
+
+&lt;p&gt;支持各种格式的性能数据导出：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;sdaf -d # CSV
+sadf -x # XML
+sadf -j # JSON
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2&gt;绘图&lt;/h2&gt;
+
+&lt;p&gt;绘图可以使用isag。它有图形界面，非常容易使用。虽然它绘出的图比较难看，但是够用了。&lt;/p&gt;
+
+&lt;p&gt;其他使用sysstat数据的绘图程序：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://magnetikonline.com/sysstatgraph/&quot;&gt;sysstatgraph&lt;/a&gt; 使用 PHP 和 HTML5 Canvas 技术。&lt;/li&gt;
+&lt;/ul&gt;
+
+</content>
+ </entry>
+ 
+ <entry>
+   <title>PL/SQL 代码规范</title>
+   <link href="http://kyle.xlau.org/posts/plsql-style.html"/>
+   <updated>2012-03-26T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/plsql-style</id>
+   <content type="html">&lt;p&gt;来自 &lt;em&gt;Oracle PL/SQL by Examples 4th Edition&lt;/em&gt; 附录一中的 PL/SQL 代码格式指南。&lt;/p&gt;
+
+&lt;h2&gt;大小写&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;关键字(BEGIN,END)，数据类型(NUMBER VARCHAR2)，内置函数(TO_CHAR,SUBSTR)，用户自定义存储过程、函数和包，这些对象名称使用大写。&lt;/li&gt;
+&lt;li&gt;变量名、表名、列名，使用小写。&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;h2&gt;空格&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;等于号和比较操作符两边加空格。&lt;/li&gt;
+&lt;li&gt;结构关键字（BEGIN and END, IF and END, LOOP and END LOOP)左边对齐。&lt;/li&gt;
+&lt;li&gt;结构内的语句缩进3个空格。&lt;/li&gt;
+&lt;li&gt;代码段之间留空行。&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;h2&gt;命名规范&lt;/h2&gt;
+
+&lt;p&gt;为防止名字冲突，最好采用以下命名规范：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;变量：&lt;code&gt;v_variable_name&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;常量：&lt;code&gt;con_constant_name&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;参数：&lt;code&gt;i_in_parameter_name&lt;/code&gt;, &lt;code&gt;o_out_parameter_name&lt;/code&gt; and &lt;code&gt;io_in_out_parameter_name&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;游标：&lt;code&gt;c_cursor_name&lt;/code&gt; or &lt;code&gt;name_cur&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;引用游标：&lt;code&gt;rc_reference_cursor_name&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;记录：&lt;code&gt;r_record_name&lt;/code&gt; or &lt;code&gt;name_rec&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;遍历游标：&lt;code&gt;FOR r_stud IN c_stud LOOP&lt;/code&gt; or &lt;code&gt;FOR stud_rec IN stud_cur LOOP&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;用户定义类型：&lt;code&gt;type_name&lt;/code&gt; or &lt;code&gt;name_type&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;PL/SQL表（类似数组）：&lt;code&gt;t_table&lt;/code&gt; or &lt;code&gt;name_tab&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;用户定义异常：&lt;code&gt;e_exception_name&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;包、存储过程和函数的命名实例：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;描述包中存储过程和函数的作用：&lt;code&gt;student_admin&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;描述存储过程所执行的操作：&lt;code&gt;remove_student&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;描述函数返回变量：&lt;code&gt;student_enroll_count&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;h2&gt;注释&lt;/h2&gt;
+
+&lt;p&gt;使用&lt;code&gt;--&lt;/code&gt;，不要用&lt;code&gt;/*...*/&lt;/code&gt;。&lt;/p&gt;
+
+&lt;h2&gt;其他建议&lt;/h2&gt;
+
+&lt;p&gt;为代码段写注释，解释此段代码的目的，并列出一些基本信息，比如作者名、创建时间、修改时间、版本和版本描述。&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>最近读过和要读的书</title>
+   <link href="http://kyle.xlau.org/posts/recent-books.html"/>
+   <updated>2012-03-15T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/recent-books</id>
+   <content type="html">&lt;p&gt;自从去年买了 Kindle 3 后，我看的书越来越多了。这些书基本上都是在公交和地铁上读完的。我身边一旦有了有电脑和网络，就不读书。我虽然不用QQ聊天，不看国内新闻站点，但我还是网络浏览成瘾，上网时的大部分时间都在不停地刷 Google+，读 Google Reader，看 Hacker News。&lt;/p&gt;
+
+&lt;p&gt;虽然我只在公交上才读书，由于最近几个月上下班都坐很久的公交，还是看了几本书。&lt;/p&gt;
+
+&lt;p&gt;最近几个月读过的几本英文书有：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;Notebook&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Steve Jobs&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Country Driving&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Factory Girls&lt;/em&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;&lt;em&gt;Steve Jobs&lt;/em&gt; 不需介绍，世界级的畅销书，伟人传记。&lt;em&gt;Notebook&lt;/em&gt; 是一本美国爱情小说。&lt;em&gt;Country Driving&lt;/em&gt; 和 &lt;em&gt;Factory Girls&lt;/em&gt; 的作者是美国人，写的是中国的事。前者写作者在中国驾车四处游览和采访所遇的人、事和他眼中的中国现代社会。后者作者是一个华裔女性，她花很长的时间调查和采访东莞的女工们的生活。说他们俩采访，因为他们都曾经是著名的美国报纸杂志的驻华记者。&lt;em&gt;Factory Girls&lt;/em&gt; 虽然主题是讲东莞女工，但我对其中作者写自己的家族迁徙史那章印象最为深刻。她写她的祖先如何在中国国内迁徙，然后从中国迁徙到台湾，又从台湾迁徙到美国的整个历史，实在让人感慨万千。&lt;/p&gt;
+
+&lt;p&gt;还读了几本中文书：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;《红太阳是怎样升起的》&lt;/li&gt;
+&lt;li&gt;《潜规则》&lt;/li&gt;
+&lt;li&gt;《不二》&lt;/li&gt;
+&lt;li&gt;《最后的贵族》&lt;/li&gt;
+&lt;li&gt;《伶人往事》&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;读过英文书里最爱 &lt;em&gt;Steve Jobs&lt;/em&gt;，读过的中文书里最爱《最后的贵族》。《最后的贵族》和《伶人往事》均是当年第一大右派章伯均的女儿章怡和的作品。她的作品最擅长是描写各种不同人物的个性、命运和生活。这两本书里写的人，大部分都是曾经的右派，个个才华横溢，却受尽磨难，不得善终。&lt;/p&gt;
+
+&lt;p&gt;这里还有几本是我预备要读的书：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;River Town&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Oracle Bones&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Life and Death in ShangHai&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;A Single Tear&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Wild Swans: Three Daughters of China&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Tide Players&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;God Is Red&lt;/em&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;前两本和 &lt;em&gt;Country Driving&lt;/em&gt; 是同一个作者，Peter Hessler，一个在中国生活了十几年的美国人，一个记者。他的华裔妻子是 &lt;em&gt;Factory Girls&lt;/em&gt; 的作者。&lt;em&gt;Life and Death in ShangHai&lt;/em&gt; 和 &lt;em&gt;A Single Tear&lt;/em&gt; 是中国人用英文写的个人回忆录，重点在描述是49年到80年左右他们的人生。&lt;em&gt;Wild Swans&lt;/em&gt; 是中国人写的20世纪中国的一个家庭三代女性的的故事。&lt;em&gt;Tide Players&lt;/em&gt; 和 &lt;em&gt;God Is Red&lt;/em&gt; 都是访问录，前者访问当代中国的一些成功人士，后者访问中国当代的一些基督教徒。前一部是直接写的英文，后一部中文翻译的。&lt;/p&gt;
+
+&lt;p&gt;所有上面提到的书的 Kindle 版本，在&lt;a href=&quot;http://ikindle.mobi/book/&quot;&gt;这里&lt;/a&gt;基本都有下载。&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Oracle 数据库整理表碎片</title>
+   <link href="http://kyle.xlau.org/posts/table-fragmentation.html"/>
+   <updated>2012-03-14T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/table-fragmentation</id>
+   <content type="html">&lt;h2&gt;表碎片的来源&lt;/h2&gt;
+
+&lt;p&gt;当针对一个表的删除操作很多时，表会产生大量碎片。删除操作释放的空间不会被插入操作立即重用，甚至永远也不会被重用。&lt;/p&gt;
+
+&lt;h2&gt;怎样确定是否有表碎片&lt;/h2&gt;
+
+&lt;pre&gt;&lt;code&gt;-- 收集表统计信息
+SQL&amp;gt; exec dbms_stats.gather_table_stats(ownname=&amp;gt;&#39;SCHEMA_NAME&#39;,tabname=&amp;gt; &#39;TABLE_NAME&#39;);
+
+-- 确定碎片程度
+SQL&amp;gt; SELECT table_name, ROUND ((blocks * 8), 2) &quot;高水位空间 k&quot;,
+   ROUND ((num_rows * avg_row_len / 1024), 2) &quot;真实使用空间 k&quot;,
+   ROUND ((blocks * 10 / 100) * 8, 2) &quot;预留空间(pctfree) k&quot;,
+   ROUND ((  blocks * 8
+           - (num_rows * avg_row_len / 1024)
+           - blocks * 8 * 10 / 100
+          ),
+          2
+         ) &quot;浪费空间 k&quot;
+  FROM dba_tables
+  WHERE table_name = &#39;TABLE_NAME&#39;;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;或者使用如下&lt;a href=&quot;https://gist.github.com/c771b0eca31bce66f785&quot;&gt;gist&lt;/a&gt;中的脚本找出某个 Schema 中表碎片超过25%的表。使用此脚本前，先确定 Schema 中表统计信息收集完整。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;-- 查看表上次收集统计信息时间
+select table_name,last_analyzed from dba_tables where owner = &#39;SCHEMA_NAME&#39;
+
+-- 收集整个 Schema 中对象的统计信息
+SQL&amp;gt; exec dbms_stats.gather_schema_stats(ownname=&amp;gt;&#39;SCHEMA_NAME&#39;);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2&gt;为什么要整理表碎片&lt;/h2&gt;
+
+&lt;p&gt;Oracle 对数据段的管理有一个高水位(HWM, High Water Mark)的概念。高水位是数据段中使用过和未使用过的数据块的分界线。高水位以下的数据块是曾使用过的，以上的是从未被使用或初始化过的。&lt;/p&gt;
+
+&lt;p&gt;当 Oracle 进行全表扫描(FTS, Full table scan)的操作时，它会读高水位下的所有数据块。如果高水位下还有很多空闲空间（碎片），读取这些空闲数据块会降低操作的性能。&lt;/p&gt;
+
+&lt;h3&gt;行链接和行迁移&lt;/h3&gt;
+
+&lt;ul&gt;
+&lt;li&gt;行链接 Row Chaining：当插入数据量大的行的，如果一个Block不能存放一条
+记录，该记录的一部分会存储到同个Extent中的其他Block，这些block形成一
+个数据块链。&lt;/li&gt;
+&lt;li&gt;行迁移 Row Migration：当Update的时候导致记录长度增加了，存储的Block已
+经满了，就会发生行迁移。Oracle会迁移整行数据到一个能够存储下整行数据
+的Block中，迁移的原始指针指向新的存放行数据的Block，ROWID不变。&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;当数据行发生链接（chain）或迁移（migrate）时，对其访问将会造成 I/O 性能
+降低，因为Oracle为获取这些数据行的数据，必须访问更多的数据块（data
+block）。&lt;/p&gt;
+
+&lt;h3&gt;表碎片导致的问题&lt;/h3&gt;
+
+&lt;ul&gt;
+&lt;li&gt;查询响应时间(尤其是全表扫描)变慢&lt;/li&gt;
+&lt;li&gt;产生大量行迁移&lt;/li&gt;
+&lt;li&gt;浪费空间&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;整理表碎片对基于索引的查询不会有太大性能提升。&lt;/p&gt;
+
+&lt;h2&gt;如何整理表碎片&lt;/h2&gt;
+
+&lt;h3&gt;10g之前&lt;/h3&gt;
+
+&lt;p&gt;两种方法：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;导出表，删除表，再导入表&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;alter table move&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;一般选择第二种，需要重建索引。&lt;/p&gt;
+
+&lt;h3&gt;10g后&lt;/h3&gt;
+
+&lt;p&gt;从 10g 开始，提供一个 &lt;code&gt;shrink&lt;/code&gt; 命令，需要表空间是基于自动段管理的。&lt;/p&gt;
+
+&lt;p&gt;可以分成两步操作：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;-- 整理表，不影响DML操作
+SQL&amp;gt; alter table TABLE_NAME shrink space compact;
+
+-- 重置高水位，此时不能有DML操作
+SQL&amp;gt; alter table TABLE_NAME shrink space;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;也可以一步到位：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;-- 整理表，并重置高水位
+SQL&amp;gt; alter table TABLE_NAME shrink space;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;shrink 的优势：&lt;/h3&gt;
+
+&lt;ul&gt;
+&lt;li&gt;不需要重建索引。&lt;/li&gt;
+&lt;li&gt;可以在线操作。&lt;/li&gt;
+&lt;li&gt;不需要空闲空间，&lt;code&gt;alter move&lt;/code&gt;需要跟当前表一样大小的空闲空间。&lt;/li&gt;
+&lt;/ul&gt;
+
+</content>
+ </entry>
+ 
+ <entry>
+   <title>JavaScript 基本概念</title>
+   <link href="http://kyle.xlau.org/posts/js-basic.html"/>
+   <updated>2012-03-13T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/js-basic</id>
+   <content type="html">&lt;h2&gt;缘由&lt;/h2&gt;
+
+&lt;p&gt;静态网页使用HTML和CSS就够了。动态网站，除了后端要有一种编程语言支持外，前端还需要用到JavaScript。最近几年，JavaScript领域出了很多新技术，如Google的V8、Node.js、CofferScript等等，还有无数的JavaScript框架。&lt;/p&gt;
+
+&lt;p&gt;我个人的知识结构中，前端只有接触过HTML和CSS，后端主要是几种脚本语言，加操作系统和数据库相关的那些本职工作，JavaScript基本是一窍不通。对js的无知，导致我闲来想折腾下自己的博客，一涉及到改js相关的代码，就只能搜索一通然后复制粘贴了。&lt;/p&gt;
+
+&lt;p&gt;于是决定要花点时间来熟悉下这js这个编程语言。&lt;/p&gt;
+
+&lt;h2&gt;学习资料&lt;/h2&gt;
+
+&lt;p&gt;两本书，&lt;em&gt;JvaScript: The Good Parts(Douglas Crockford)&lt;/em&gt; 和 &lt;em&gt;Pragmatic Guide to Javascript&lt;/em&gt;（主要讲js在浏览器端的常见用途）。&lt;/p&gt;
+
+&lt;p&gt;js大牛&lt;a href=&quot;http://javascript.crockford.com/&quot;&gt;Douglas Crockford&lt;/a&gt;有许多js相关的视频，有时间的时候应该看看。&lt;/p&gt;
+
+&lt;p&gt;中文资料有《JavaScript内核》，&lt;a href=&quot;http://www.icodeit.org/&quot;&gt;邱俊涛&lt;/a&gt;写的，免费电子书。&lt;/p&gt;
+
+&lt;h2&gt;主要概念&lt;/h2&gt;
+
+&lt;h3&gt;DOM&lt;/h3&gt;
+
+&lt;p&gt;DOM(Document Object Model)是浏览器的API。大部分牛人都如说这个API很烂。&lt;/p&gt;
+
+&lt;p&gt;js对DOM的主要操作：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;获取要操作的元素&lt;/li&gt;
+&lt;li&gt;改动元素（显示、隐藏、移动或修改元素内容）&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;h3&gt;JSON&lt;/h3&gt;
+
+&lt;p&gt;基本每种编程语言都会提供一个可以存储键值对的数据结构，虽然名字不同，像Perl的&lt;code&gt;Hash&lt;/code&gt;，Python的&lt;code&gt;dict&lt;/code&gt;，Java的&lt;code&gt;Map&lt;/code&gt;。他们也有一个统一的名字，叫做联合数组，&lt;a href=&quot;http://en.wikipedia.org/wiki/Associative_array&quot;&gt;&lt;code&gt;Associative array&lt;/code&gt;&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;js中的对象使用&lt;code&gt;hash&lt;/code&gt;表示。js中没有类的概念，只有对象。除了少数几个&lt;code&gt;primitives&lt;/code&gt;(布尔值、数字、字符串、几个特殊常数)，js中一切都是对象。函数和其他任何对象在地位上没有区别，函数本身也是一个对象。&lt;/p&gt;
+
+&lt;p&gt;JSON(JavaScript Object Notation)，JavaScript对象表示法，是js中用来表示对象的格式。发明者是Douglas Crockford。这是个好东西。&lt;/p&gt;
+
+&lt;p&gt;JSON是用大括号括起来的键值对，也就是&lt;code&gt;Hash&lt;/code&gt;，值可以是任意的JavaScript对象。JSON格式允许递归（它的值又可以是一个JSON表示的任意对象），可以用来表示任意复杂的数据形式。&lt;/p&gt;
+
+&lt;p&gt;对象用&lt;code&gt;{}&lt;/code&gt;表示，数组用&lt;code&gt;[]&lt;/code&gt;表示。&lt;/p&gt;
+
+&lt;p&gt;两种访问对象属性的方法：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;点表示法，dot notation, &lt;code&gt;obj.prop&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;中括号表示法，bracket notation, &lt;code&gt;obj[&#39;prop&#39;]&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;h3&gt;Prototype Chain&lt;/h3&gt;
+
+&lt;p&gt;通过使用prototype(原型)，js建立传统OO语言中的继承，从而体现对象的层次关系。每个对象都有一个prototype属性，prototype本身也是对象，它又有prototype。默认对象的prototype是Object，Object的prototype是空对象null.&lt;/p&gt;
+
+&lt;h3&gt;函数式编程&lt;/h3&gt;
+
+&lt;h4&gt;闭包(Closure)&lt;/h4&gt;
+
+&lt;p&gt;函数func内定义函数inner，然后在函数外部调用inner，这个过程就产生一个闭包。&lt;/p&gt;
+
+&lt;h4&gt;匿名函数(Lambda Expression)&lt;/h4&gt;
+
+&lt;p&gt;匿名函数就是没有名字的函数。&lt;/p&gt;
+
+&lt;h4&gt;高阶函数&lt;/h4&gt;
+
+&lt;p&gt;以一个或多个函数为参数的函数为高阶函数。C语言可以通过函数指针实现高阶函数。&lt;/p&gt;
+
+&lt;h4&gt;柯里化&lt;/h4&gt;
+
+&lt;p&gt;预先将函数的某些参数传入，得到一个简单的函数。这个概念还最陌生，没有理解。&lt;/p&gt;
+
+&lt;h4&gt;Y-Combinator&lt;/h4&gt;
+
+&lt;p&gt;使用Y结合子，可以做到对匿名函数使用递归。&lt;/p&gt;
+
+&lt;h2&gt;下一步&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;学习掌握至少一个框架，如jQuery。&lt;/li&gt;
+&lt;li&gt;学学CafferScript。&lt;/li&gt;
+&lt;li&gt;了解了解Node.js。&lt;/li&gt;
+&lt;/ul&gt;
+
+</content>
+ </entry>
+ 
+ <entry>
+   <title>两个监控HP硬件的Nagios插件</title>
+   <link href="http://kyle.xlau.org/posts/nagios-plugin-for-HP.html"/>
+   <updated>2012-02-20T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/nagios-plugin-for-HP</id>
+   <content type="html">&lt;p&gt;主要是两个Ngios插件的使用，都是用Perl写的。check_hpasm 是大牛德国人 &lt;a href=&quot;https://github.com/lausser&quot;&gt;Gerhard Lausser&lt;/a&gt; 写的。&lt;a href=&quot;http://folk.uio.no/trondham/software/&quot;&gt;check_hp_bladechassis&lt;/a&gt; 似乎是挪威人写的。&lt;/p&gt;
+
+&lt;h2&gt;HP 服务器硬件状态监控 (check_hpasm)&lt;/h2&gt;
+
+&lt;p&gt;可以使用两种模式，check_nrpe方式和SNMP方式。两种方式都依赖HP的ProLiant Support Pack(PSP)软件包。&lt;/p&gt;
+
+&lt;p&gt;check_nrpe方式需要修改NRPE和sudo配置：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# vi /usr/local/nagios/etc/nrpe.cfg
+添加一行：
+command[check_hpasm]=/usr/local/nagios/libexec/check_hpasm
+载入新的配置：
+service xinetd reload
+
+# visudo
+注释一行：
+# Defaults    requiretty
+添加一行：
+nagios ALL=NOPASSWD:/sbin/hpasmcli,/usr/local/nagios/libexec/check_hpasm
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;SNMP方式，需要修改SNMP配置，允许监控服务器访问服务器的SNMP信息。Nagios服务端的配置，可以这样写：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;define command {
+    command_name check_hpasm_snmp
+    command_line $USER1$/check_hpasm -H $HOSTADDRESS$ -C public
+}
+
+define servicegroup {
+    servicegroup_name hp_hardware
+    alias             HP Proliant Server Hardware Health
+}
+
+define service {
+    use           generic-service
+    name          hpasm-service
+    check_period  24x7
+    check_interval 10
+    retry_interval 1
+    max_check_attempts 1
+    notification_options w,c,u
+    register       0
+}
+
+# SNMP
+define service {
+    use           hpasm-service
+    servicegroups hp_hardware
+    host_name     host1,host2,...
+    service_description HP Hardware Health
+    check_command  check_hpasm_snmp
+}
+
+# check_nrpe
+define service {
+    use           hpasm-service
+    servicegroups hp_hardware
+    host_name     host1,host2,...
+    service_description HP Hardware Health
+    check_command check_nrpe!check_hpasm
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2&gt;HP 刀箱硬件状态监控 (check_hp_bladechassis)&lt;/h2&gt;
+
+&lt;p&gt;通过SNMP监控。&lt;/p&gt;
+
+&lt;p&gt;首先需要在刀箱配置里启用SNMP，然后在Nagios服务端配置：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;define command {
+    command_name check_hp_bladechassis
+    command_line $USER1$/check_hp_bladechassis -H $HOSTADDRESS$
+}
+
+define service {
+    use           hpasm-service
+    servicegroups hp_hardware
+    host_name     host1,host2,...
+    service_description HP Blade Encloure Hardware Health
+    check_command check_nrpe!check_hpasm
+}
+&lt;/code&gt;&lt;/pre&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>配置Bacula集中备份</title>
+   <link href="http://kyle.xlau.org/posts/configure-bacula.html"/>
+   <updated>2012-02-08T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/configure-bacula</id>
+   <content type="html">&lt;p&gt;在读&lt;em&gt;Unix and Linux System Administration Handbook&lt;/em&gt;第四版，第十章主要讲备份工具Bacula。Bacula是一个网络集中备份软件，可以让你在一台中心服务器上集中管理整个网络的备份。&lt;/p&gt;
+
+&lt;h2&gt;安装Bacula服务端&lt;/h2&gt;
+
+&lt;p&gt;Bacula必须要有一个catalog数据库，可以使用MySQL, SQLite或者PostgreSQL。&lt;/p&gt;
+
+&lt;p&gt;首先到Bacula官网下载最新稳定版源码包。详细安装手册在源码包的docs目录里有。&lt;/p&gt;
+
+&lt;p&gt;简单的描述，安装过程是：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;解压源码包&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;./configure --with-mysql&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;make; make install&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;安装完Bacula执行文件后，开始在MySQL里创建Bcaula所需的数据库和表。
+Bacula自带三个数据库相关操作的脚本：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;grant_mysql_privileges&lt;/code&gt;，赋权&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;create_mysql_database&lt;/code&gt;，建库&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;make_mysql_tables&lt;/code&gt;，建表&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;h2&gt;配置Bacula服务端&lt;/h2&gt;
+
+&lt;p&gt;默认所有配置文件安装在&lt;code&gt;/etc/bacula&lt;/code&gt;下。&lt;/p&gt;
+
+&lt;p&gt;主要配置文件：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;bacula-dir.conf&lt;/code&gt;, Director daemon
+
+&lt;ul&gt;
+&lt;li&gt;Catalog 资源：定义跟catalog数据库的连接。&lt;/li&gt;
+&lt;li&gt;Storage 资源：配置跟存储守护进程的通信。&lt;/li&gt;
+&lt;li&gt;Pool 资源：定义一组存储卷（文件或者磁带等）。&lt;/li&gt;
+&lt;li&gt;Schedule 资源：定义备份job的时间表。&lt;/li&gt;
+&lt;li&gt;Client 资源：定义被备份的机器信息。&lt;/li&gt;
+&lt;li&gt;FileSet 资源：定义备份的文件。&lt;/li&gt;
+&lt;li&gt;Job 资源：定义备份job，集合其他资源。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;bacula-sd.conf&lt;/code&gt;, Storage daemon&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;bacula-fd.conf&lt;/code&gt;, File daemon&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;bconsole.conf&lt;/code&gt;, Management console&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;Bacula 启停：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;bacula Usage: /sbin/bacula {start|stop|restart|status}&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;h2&gt;安装客户端&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;./configure --enable-client-only&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;make; make install&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;默认执行文件安装在&lt;code&gt;/sbin&lt;/code&gt;目录，配置文件安装在&lt;code&gt;/etc/bacula&lt;/code&gt;目录。&lt;/p&gt;
+
+&lt;h2&gt;常见备份配置&lt;/h2&gt;
+
+&lt;h3&gt;配置邮件发送&lt;/h3&gt;
+
+&lt;p&gt;配置好邮件发送后，每次备份或者恢复操作会发出邮件通知备份管理员。&lt;/p&gt;
+
+&lt;p&gt;使用如下命令配置邮件发送，当然首先要配置好mutt发送邮件。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;mailcommand = &quot;/usr/bin/mutt -s \&quot;Bacula: %t %e of %c %l\&quot; %r&quot;
+operatorcommand = &quot;/usr/bin/mutt -s \&quot;Bacula: Intervention needed for %j\&quot; %r&quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;包含其他配置文件&lt;/h3&gt;
+
+&lt;p&gt;每个客户端使用一个配置文件。使用如下配置包含&lt;code&gt;clientdefs&lt;/code&gt;目录下的所有配置文件。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;@|&quot;sh -c &#39;for f in /etc/bacula/clientdefs/*.conf ; do echo @${f} ; done&#39;&quot;
+&lt;/code&gt;&lt;/pre&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Oracle RAC 共享密码文件</title>
+   <link href="http://kyle.xlau.org/posts/rac-password-file.html"/>
+   <updated>2011-12-10T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/rac-password-file</id>
+   <content type="html">&lt;h2&gt;问题&lt;/h2&gt;
+
+&lt;p&gt;RAC环境下，如果各节点都有自己的密码文件，修改SYS密码需要在每个实例下执行修改命令。&lt;/p&gt;
+
+&lt;p&gt;环境1：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;OS: AIX 6.1&lt;/li&gt;
+&lt;li&gt;Oracle Version: 10.2.0.4 RAC&lt;/li&gt;
+&lt;li&gt;Oracle Storage: RAW&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;环境2：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;OS: RHEL 5.5&lt;/li&gt;
+&lt;li&gt;Oracle Version: 11.1.0.6 RAC&lt;/li&gt;
+&lt;li&gt;Oracle Storage: OCFS + ASM&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;h2&gt;解决&lt;/h2&gt;
+
+&lt;p&gt;使用符号链接，将各节点的密码文件指向共享存储上的一个文件。&lt;/p&gt;
+
+&lt;h3&gt;裸设备&lt;/h3&gt;
+
+&lt;p&gt;用dd将密码文件复制到共享裸设备。注意，AIX系统下必须指定4k的偏移。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;shell$ cd $ORACLE_HOME/dbs
+shell$ dd if=orapwdSID of=/dev/rdb_pwdfile bs=4k seek=1
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;建立符号链接，在所有节点执行。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;shell$ cd $ORACLE_HOME/dbs
+shell$ ln -s /dev/rdb_pwdfile orapwdSID
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;OCFS&lt;/h3&gt;
+
+&lt;p&gt;复制密码文件到OCFS共享文件系统下。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;shell$ cp $ORACLE_HOME/dbs/orapwdSID /share_config/orapwd
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;建立符号链接，在所有节点执行。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;shell$ cd $ORACLE_HOME/dbs
+shell$ ln -s /share_config/orapwd orapwdSID
+&lt;/code&gt;&lt;/pre&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Oracle 11gR1 默认设置调整</title>
+   <link href="http://kyle.xlau.org/posts/11g-default-config.html"/>
+   <updated>2011-12-08T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/11g-default-config</id>
+   <content type="html">&lt;h2&gt;默认没有设置LOCAL_LISTENER参数&lt;/h2&gt;
+
+&lt;p&gt;客户端登录会报错，ORA-12545: 因目标主机或对象不存在, 连接失败。有两种解决方法，一是改服务端配置（更好），二是改客户端。&lt;/p&gt;
+
+&lt;h3&gt;设置 LOCAL_LISTENER&lt;/h3&gt;
+
+&lt;p&gt;参考 MOS Notes ID 364855.1。&lt;/p&gt;
+
+&lt;p&gt;在两个实例上分别执行：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; alter system set LOCAL_LISTENER=&quot;(address=(protocol=tcp)(port=1521)(host=&amp;lt;your_vip_node1&amp;gt;)) scope=both sid=&#39;INSTANCE_NAME1&#39;;
+SQL&amp;gt; alter system set LOCAL_LISTENER=&quot;(address=(protocol=tcp)(port=1521)(host=&amp;lt;your_vip_node2&amp;gt;)) scope=both sid=&#39;INSTANCE_NAME2&#39;;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;注意your_vip_node1使用ip，如果使用主机名，还是需要在客户端修改hosts文件。&lt;/p&gt;
+
+&lt;h3&gt;修改客户端hosts文件&lt;/h3&gt;
+
+&lt;p&gt;添加类似:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;172.25.198.224 racnode1-vip
+172.25.198.225 racnode2-vip
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2&gt;默认使用ADR管理日志和跟踪文件&lt;/h2&gt;
+
+&lt;p&gt;ADR(Automatic Diagnostic Repository)是自动诊断信息库，11g新特性，用来统一管理Oracle相关的所有日志和跟踪文件。&lt;/p&gt;
+
+&lt;p&gt;由于监听相关的日志现在也由ADR统一管理了，导致alert log里会大量出现&lt;code&gt;TNS-12535: TNS:operation timed out&lt;/code&gt;的报错信息。 11g之前，这类报错是写在sqlnet.log里的。&lt;/p&gt;
+
+&lt;p&gt;如果不想看到alert log里报错太多，可以将监听相关的日志改为11g前的记录方式：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;修改sqlnet.ora，添加： DIAG_ADR_ENABLED = OFF&lt;/li&gt;
+&lt;li&gt;修改listener.ora，添加： DIAG_ADR_ENABLED_&lt;listenername&gt; = OFF&lt;/li&gt;
+&lt;li&gt;重启或reload监听。&lt;/li&gt;
+&lt;/ol&gt;
+
+
+&lt;p&gt;这个其实不需要改，只需忽略TNS类的报错就是。改了，监听相关的故障就不能通过adrci工具来诊断了。&lt;/p&gt;
+
+&lt;h2&gt;默认密码策略&lt;/h2&gt;
+
+&lt;p&gt;默认一个用户10次登录失败，会锁定用户。如果某用户不停使用错误密码登录数据
+库，会导致用户被锁定，使得业务受影响。应修改此策略为不限制。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; alter profile default FAILED_LOGIN_ATTEMPTS unlimited;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;默认一个用户密码如果超过180天不更改，也会锁定用户。如果你的DB密码不能经
+常修改的话，此策略也应修改。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; alter profile default PASSWORD_LIFE_TIME unlimited;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2&gt;默认审计设置&lt;/h2&gt;
+
+&lt;p&gt;在Oracle 11g中，审计功能（AUDIT_TRAIL）是默认开启的。审计数据记录在数据
+库中的SYS.AUD$表上。11g以前的版本中，审计默认是关闭的。&lt;/p&gt;
+
+&lt;p&gt;如果你发现AUD$这个表比较大了，检查下是哪种审计占的空间：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; select action_name,count(*) from dba_audit_trail group by action_name;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;一般是LOGON和LOGOFF类型的审计最多。取消此类审计：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; noaudit session whenever successful;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;一般来说，如果空间不是占的特别多，此类审计还是保留为好。可以取消对一些
+登录特别频繁的用户的审计，比如DBSNMP用户：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; noaudit session by dbsnmp;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2&gt;默认维护窗口&lt;/h2&gt;
+
+&lt;p&gt;默认的维护窗口平时是22:00开始，持续4小时，周末6:00开始，持续20小时。&lt;/p&gt;
+
+&lt;p&gt;根据需要进行修改，比如7x24的系统，可以将维护窗口修改为每天0:00开始，持续4小时，周末也一样。&lt;/p&gt;
+
+&lt;h2&gt;参考&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Client Connection to RAC Intermittently Fails-ORA-12545 TNS: Host or
+Object Does not Exist (Doc ID 364855.1)&lt;/li&gt;
+&lt;li&gt;Fatal NI Connect Error 12170, &amp;lsquo;TNS-12535: TNS:operation timed out&amp;rsquo;
+Reported in 11g Alert Log (Doc ID 1286376.1)&lt;/li&gt;
+&lt;li&gt;Using and Disabling the Automatic Diagnostic Repository (ADR) with
+Oracle Net for 11g (Doc ID 454927.1)&lt;/li&gt;
+&lt;li&gt;Huge/Large/Excessive Number Of Audit Records Are Being Generated In
+The Database (Doc ID 1171314.1)&lt;/li&gt;
+&lt;/ul&gt;
+
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Markdown 标记语言指南</title>
+   <link href="http://kyle.xlau.org/posts/markdown.html"/>
+   <updated>2011-11-21T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/markdown</id>
+   <content type="html">&lt;h2&gt;发明者&lt;/h2&gt;
+
+&lt;p&gt;Markdown 的发明者是 John Gruber 和 Aaron Swartz，目标是 &amp;ldquo;to write using an easy-to-read, easy-to-write plain text format, then convert it to structurally valid XHTML (or HTML)&quot;。&lt;/p&gt;
+
+&lt;p&gt;John Gruber 是一个作家，有计算机学士学位，苹果迷。他最有名的一个项目是 &lt;a href=&quot;http://daringfireball.net/&quot;&gt;Daring Fireball&lt;/a&gt; 网站，一个主要写苹果产品相关信息的技术博客，从2006年4月开始，他全职维护此网站。&lt;/p&gt;
+
+&lt;p&gt;Aaron Swartz 是一个非常年轻有为的家伙，一大把的经历和成绩。他的&lt;a href=&quot;http://www.aaronsw.com/&quot;&gt;个人网站&lt;/a&gt;里列出了他的所有成绩。&lt;/p&gt;
+
+&lt;h2&gt;语法&lt;/h2&gt;
+
+&lt;h3&gt;标题&lt;/h3&gt;
+
+&lt;h4&gt;Setext-style&lt;/h4&gt;
+
+&lt;p&gt;使用等于号（&lt;code&gt;=&lt;/code&gt;）和下杠（&lt;code&gt;_&lt;/code&gt;）。&lt;/p&gt;
+
+&lt;h4&gt;Atx-style&lt;/h4&gt;
+
+&lt;p&gt;使用井号（&lt;code&gt;#&lt;/code&gt;），一个井号是H1，两个是H2，依此类推。&lt;/p&gt;
+
+&lt;p&gt;Atx 是 Aaron Swartz 发明的另一种文本标记语言。&lt;/p&gt;
+
+&lt;h3&gt;列表&lt;/h3&gt;
+
+&lt;h4&gt;无序列表&lt;/h4&gt;
+
+&lt;p&gt;星号（&lt;code&gt;*&lt;/code&gt;），加号（&lt;code&gt;+&lt;/code&gt;），或者减号（&lt;code&gt;-&lt;/code&gt;）都行。&lt;/p&gt;
+
+&lt;h4&gt;有序列表&lt;/h4&gt;
+
+&lt;p&gt;直接使用1、2、3这种数字。&lt;/p&gt;
+
+&lt;h3&gt;链接&lt;/h3&gt;
+
+&lt;h4&gt;行内&lt;/h4&gt;
+
+&lt;pre&gt;&lt;code&gt;This is an [example link](http://example.com/ &quot;With a Title&quot;).
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h4&gt;引用&lt;/h4&gt;
+
+&lt;pre&gt;&lt;code&gt;I get 10 times more traffic from [Google][1] than from
+[Yahoo][2] or [MSN][3].
+
+[1]: http://google.com/        &quot;Google&quot;
+[2]: http://search.yahoo.com/  &quot;Yahoo Search&quot;
+[3]: http://search.msn.com/    &quot;MSN Search&quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h4&gt;自动&lt;/h4&gt;
+
+&lt;p&gt;用括号将链接或email地址括起来，就会自动生产链接。&lt;/p&gt;
+
+&lt;h3&gt;图片&lt;/h3&gt;
+
+&lt;h4&gt;行内&lt;/h4&gt;
+
+&lt;pre&gt;&lt;code&gt;![alt text](/path/to/img.jpg &quot;Title&quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h4&gt;引用&lt;/h4&gt;
+
+&lt;pre&gt;&lt;code&gt;![alt text][id]
+
+[id]: /path/to/img.jpg &quot;Title&quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;代码&lt;/h3&gt;
+
+&lt;p&gt;使用backtick quotes（`）。&lt;/p&gt;
+
+&lt;p&gt;缩进四个字符或者一个tab。&lt;/p&gt;
+
+&lt;h3&gt;引用&lt;/h3&gt;
+
+&lt;p&gt;就像电子邮件里一样，使用大于号（&lt;code&gt;&amp;gt;&lt;/code&gt;）。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;&amp;gt; This is a blockquote.
+&amp;gt;
+&amp;gt; This is the second paragraph in the blockquote.
+&amp;gt;
+&amp;gt; ## This is an H2 in a blockquote
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;强调&lt;/h3&gt;
+
+&lt;p&gt;星号（&lt;code&gt;*&lt;/code&gt;）或者下杠（&lt;code&gt;_&lt;/code&gt;），一个星号代表斜体，两个星号代表粗体，三个星号是斜粗体，下杠一样。&lt;/p&gt;
+
+&lt;h3&gt;横线&lt;/h3&gt;
+
+&lt;p&gt;三个或三个以上的中杠（&lt;code&gt;-&lt;/code&gt;），星号（&lt;code&gt;*&lt;/code&gt;），下杠（&lt;code&gt;_&lt;/code&gt;），产生一个&lt;code&gt;&amp;lt;hr /&amp;gt;&lt;/code&gt; tag，也就是一条横线。&lt;/p&gt;
+
+&lt;h3&gt;转义&lt;/h3&gt;
+
+&lt;p&gt;可以对如下字符进行转义：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;\&lt;/code&gt;   backslash&lt;/li&gt;
+&lt;li&gt;`   backtick&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;*&lt;/code&gt;   asterisk&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;_&lt;/code&gt;   underscore&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;{}&lt;/code&gt;  curly braces&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;[]&lt;/code&gt;  square brackets&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;()&lt;/code&gt;  parentheses&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;#&lt;/code&gt;   hash mark&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;+&lt;/code&gt;   plus sign&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;-&lt;/code&gt;   minus sign (hyphen)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;.&lt;/code&gt;   dot&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;!&lt;/code&gt;   exclamation mark&lt;/li&gt;
+&lt;/ul&gt;
+
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Oracle 手工建库(10g RAC)</title>
+   <link href="http://kyle.xlau.org/posts/manaual-database-creation.html"/>
+   <updated>2011-10-19T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/manaual-database-creation</id>
+   <content type="html">&lt;h2&gt;简介&lt;/h2&gt;
+&lt;p&gt;最权威的参考文档是MOS的文档Doc ID &lt;a href=&quot;:https://supporthtml.oracle.com/ep/faces/secure/km/DocumentDisplay.jspx?id=240052.1&quot;&gt;240052.1&lt;/a&gt; 和 Doc ID &lt;a href=&quot;:https://supporthtml.oracle.com/ep/faces/secure/km/DocumentDisplay.jspx?id=137288.1&quot;&gt;137288.1&lt;/a&gt; 。&lt;/p&gt;
+&lt;p&gt;大致做法是，先写一个pfile文件，用pfile启动Oracle实例，然后执行create database语句，创建数据库。建好数据库后，用Oracle提供的脚本导入数据字典和一些官方PL/SQL包。&lt;/p&gt;
+&lt;p&gt;主要的导入脚本是：&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;&lt;span class=&quot;caps&quot;&gt;CATALOG&lt;/span&gt;.SQL： 创建数据字典和动态性能视图。&lt;/li&gt;
+	&lt;li&gt;&lt;span class=&quot;caps&quot;&gt;CATPROC&lt;/span&gt;.SQL： 创建官方PL/SQL包。&lt;/li&gt;
+	&lt;li&gt;&lt;span class=&quot;caps&quot;&gt;CATCLUST&lt;/span&gt;.SQL： 创建RAC相关视图。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;在pfile里指定control file文件的位置，指定undo表空间的名字。block大小也在pfile里指定。pfile里指定的一些dump相关目录要先创建好。&lt;/p&gt;
+&lt;p&gt;在创建数据库的语句里，需要指定system表空间使用的数据文件大小和路径，指定undo表空间的名字和数据文件大小和路径，至少指定两组重做日志的大小和文件路径，10g的库还要指定sysaux表空间使用的数据文件大小和路径。数据库的字符集也需要在创建数据库时指定。默认表空间和默认temp表空间，以及sys和system用户密码也可以在建库语句里指定。&lt;/p&gt;
+&lt;p&gt;建库语句里，还需要指定一些数据库的限制，比如数据文件最大数量、实例最大数量、重做日志文件最大数量、每组重做日志文件的成员最大数量等。&lt;/p&gt;
+&lt;p&gt;如果是RAC库，再加一个线程2的两组重做日志，并启用此线程的重做日志。&lt;/p&gt;
+&lt;h2&gt;详细步骤&lt;/h2&gt;
+&lt;h3&gt;创建目录&lt;/h3&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;sql&quot;&gt;&lt;span class=&quot;n&quot;&gt;mkdir&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;u01&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;app&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;oracle&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;admin&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dcs&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;adump&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bdump&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cdump&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dpdump&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hdump&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pfile&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;udump&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3&gt;启动数据库&lt;/h3&gt;
+&lt;p&gt;pfile的内容，可以随便找一个当前库的修改下就行。&lt;/p&gt;
+&lt;h3&gt;建库语句&lt;/h3&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;sql&quot;&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DATABASE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;test&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;CONTROLFILE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;REUSE&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;MAXINSTANCES&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;32&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;MAXLOGHISTORY&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;100&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;MAXLOGFILES&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;64&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;MAXLOGMEMBERS&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;MAXDATAFILES&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1024&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;DATAFILE&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;/dev/rdb_system01&amp;#39;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SIZE&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2046&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;M&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;REUSE&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;SYSAUX&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;DATAFILE&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;/dev/rdb_sysaux01&amp;#39;&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;SIZE&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;4094&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;M&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;REUSE&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;TEMPORARY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TABLESPACE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TEMP&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TEMPFILE&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;/dev/rdb_temp01&amp;#39;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SIZE&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;8190&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;M&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;REUSE&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;DEFAULT&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TABLESPACE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;USERS&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;DATAFILE&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;/dev/rdb_users01&amp;#39;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SIZE&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;8190&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;M&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;REUSE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;UNDO&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TABLESPACE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;UNDOTBS1&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;DATAFILE&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;/dev/rdb_undo11&amp;#39;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SIZE&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;8190&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;M&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;REUSE&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;CHARACTER&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SET&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ZHS16GBK&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;LOGFILE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;GROUP&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;/dev/rdb_redo111&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;/dev/rdb_redo112&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SIZE&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;255&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;M&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;REUSE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;GROUP&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;/dev/rdb_redo121&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;/dev/rdb_redo122&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SIZE&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;255&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;M&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;REUSE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3&gt;执行创建对象的脚本&lt;/h3&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;sql&quot;&gt;&lt;span class=&quot;n&quot;&gt;conn&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sys&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;change_on_install&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;@?/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;rdbms&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;admin&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;catalog&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;sql&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;  &lt;span class=&quot;c1&quot;&gt;-- 数据字典，必选&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;@?/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;rdbms&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;admin&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;catproc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;sql&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;--时间特别长, 必选&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;@?/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;rdbms&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;admin&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;catblock&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;sql&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;-- 如果想从一些视图中看到lock的信息运行&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;@?/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;rdbms&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;admin&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;catclust&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;sql&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;-- 10g 有关rac的数据字典脚本&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;connect&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;system&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;manager&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;@?/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sqlplus&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;admin&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pupbld&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;sql&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;@?/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sqlplus&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;admin&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;help&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hlpbld&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;sql&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;helpus&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;sql&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;-- 重新编译下所有无效对象&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;@?/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;rdbms&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;admin&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;utlrp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;sql&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3&gt;创建实例2的重做日志和undo表空间&lt;/h3&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;sql&quot;&gt;&lt;span class=&quot;k&quot;&gt;ALTER&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DATABASE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;ADD&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;LOGFILE&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;THREAD&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;GROUP&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;/dev/rdb_redo231&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;/dev/rdb_redo232&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SIZE&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;255&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;M&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;REUSE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;GROUP&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;/dev/rdb_redo241&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;/dev/rdb_redo242&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SIZE&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;255&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;M&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;REUSE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;ALTER&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DATABASE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ENABLE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;PUBLIC&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;THREAD&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;UNDO&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TABLESPACE&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&amp;quot;UNDOTBS2&amp;quot;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;DATAFILE&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;/dev/rdb_undo21&amp;#39;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SIZE&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;8190&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;M&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;REUSE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3&gt;创建密码文件&lt;/h3&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;orapwd &lt;span class=&quot;nv&quot;&gt;file&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;/tmp/rdb_pwdfile&amp;#39;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;password&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;change_on_instal
+dd &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;/tmp/rdb_pwdfile&amp;#39;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;of&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;/dev/rdb_pwdfile&amp;#39;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;bs&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;4k
+ln -s /dev/rdb_pwdfile &lt;span class=&quot;nv&quot;&gt;$ORACLE_HOME&lt;/span&gt;/dbs/orapwdcs1
+ln -s /dev/rdb_pwdfile &lt;span class=&quot;nv&quot;&gt;$ORACLE_HOME&lt;/span&gt;/dbs/orapwdcs2
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3&gt;注册到CRS&lt;/h3&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;srvctl add database -d &lt;span class=&quot;nb&quot;&gt;test&lt;/span&gt; -o &lt;span class=&quot;nv&quot;&gt;$ORACLE_HOME&lt;/span&gt; -p /dev/rdb_spfile
+srvctl add instance -d &lt;span class=&quot;nb&quot;&gt;test&lt;/span&gt; -i test1 -n testdb1
+srvctl add instance -d &lt;span class=&quot;nb&quot;&gt;test&lt;/span&gt; -i test2 -n testdb2
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2&gt;总结&lt;/h2&gt;
+&lt;p&gt;手工建库不难，我觉得比起DBCA建库它还要更加可靠。手工建库虽然稍微复杂点，但可以让你更深入的理解Oracle的运行机制，对DBCA这个工具也会有更深入的理解。比如，我现在就认识到，DBCA其实只是这些命令行的一个图形界面的包装，实际调用的还是跟手工执行的命令一样的脚本。&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Oracle's performance-tuning reports</title>
+   <link href="http://kyle.xlau.org/posts/perf-report.html"/>
+   <updated>2011-09-18T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/perf-report</id>
+   <content type="html">&lt;h2&gt;Introduction&lt;/h2&gt;
+&lt;ul&gt;
+	&lt;li&gt;Automatic Workload Repository (&lt;span class=&quot;caps&quot;&gt;AWR&lt;/span&gt;)&lt;/li&gt;
+	&lt;li&gt;Automatic Database Diagnostic Monitor (&lt;span class=&quot;caps&quot;&gt;ADDM&lt;/span&gt;)&lt;/li&gt;
+	&lt;li&gt;Active Session History (&lt;span class=&quot;caps&quot;&gt;ASH&lt;/span&gt;)&lt;/li&gt;
+	&lt;li&gt;Statspack&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;span class=&quot;caps&quot;&gt;AWR&lt;/span&gt;, &lt;span class=&quot;caps&quot;&gt;ADDM&lt;/span&gt; and &lt;span class=&quot;caps&quot;&gt;ASH&lt;/span&gt; need additional license.  Statspack is free.&lt;/p&gt;
+&lt;p&gt;You can also run &lt;span class=&quot;caps&quot;&gt;AWR&lt;/span&gt;, &lt;span class=&quot;caps&quot;&gt;ADDM&lt;/span&gt;, and &lt;span class=&quot;caps&quot;&gt;ASH&lt;/span&gt; reports from Enterprise Manager, which you may find more intuitive than manually running the scripts from SQL*Plus.&lt;/p&gt;
+&lt;p&gt;Oracle maintains a massive collection of dynamic performance views that track and accumulate metrics of database performance.  For Oracle 11g, there&amp;#8217;re over 400 dynamic performance views:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; select count(*) from dictionary where table_name like &#39;V$%&#39;;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The Oracle performance utilities rely on periodic snapshots gathered from these internal performance views.  Two of the most useful views with regard to performance statistics are the V$&lt;span class=&quot;caps&quot;&gt;SYSSTAT&lt;/span&gt; and V$&lt;span class=&quot;caps&quot;&gt;SESSTAT&lt;/span&gt; view.&lt;/p&gt;
+&lt;h2&gt;Using &lt;span class=&quot;caps&quot;&gt;AWR&lt;/span&gt;&lt;/h2&gt;
+&lt;p&gt;Oracle will automatically take a snapshot of your database once an hour and populate the underlying &lt;span class=&quot;caps&quot;&gt;AWR&lt;/span&gt; tables that store the statistics.  By default, seven days of statistics are retained.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; @?/rdbms/admin/awrrpt&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Generate an &lt;span class=&quot;caps&quot;&gt;AWR&lt;/span&gt; report for a specific &lt;span class=&quot;caps&quot;&gt;SQL&lt;/span&gt; statement:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; @?/rdbms/admin/awrsqrpt&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;Using &lt;span class=&quot;caps&quot;&gt;ADDM&lt;/span&gt;&lt;/h2&gt;
+&lt;p&gt;&lt;span class=&quot;caps&quot;&gt;ADDM&lt;/span&gt; report provides useful suggestions on which &lt;span class=&quot;caps&quot;&gt;SQL&lt;/span&gt; statements are candidates for tuning.  It analyzes data in the &lt;span class=&quot;caps&quot;&gt;AWR&lt;/span&gt; tables to identify potential bottlenecks and high resource-consuming &lt;span class=&quot;caps&quot;&gt;SQL&lt;/span&gt; queries.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; @?/rdbms/admin/addmrpt&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;Using &lt;span class=&quot;caps&quot;&gt;ASH&lt;/span&gt;&lt;/h2&gt;
+&lt;p&gt;&lt;span class=&quot;caps&quot;&gt;ASH&lt;/span&gt; report allows you to focus on short-lived &lt;span class=&quot;caps&quot;&gt;SQL&lt;/span&gt; statements that have been recently run and may have only executed for a brief amount of time.&lt;/p&gt;
+&lt;p&gt;The &lt;span class=&quot;caps&quot;&gt;AWR&lt;/span&gt; and &lt;span class=&quot;caps&quot;&gt;ADDM&lt;/span&gt; output shows top-consuming &lt;span class=&quot;caps&quot;&gt;SQL&lt;/span&gt; in terms of total database time.  If the &lt;span class=&quot;caps&quot;&gt;SQL&lt;/span&gt; performance problem is transient and short-lived, use &lt;span class=&quot;caps&quot;&gt;ASH&lt;/span&gt;.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; @?/rdbms/admin/ashrpt&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;Using Statspack&lt;/h2&gt;
+&lt;p&gt;Help you identify poorly performing &lt;span class=&quot;caps&quot;&gt;SQL&lt;/span&gt; statements.&lt;/p&gt;
+&lt;p&gt;Install Statspack, it creates a &lt;span class=&quot;caps&quot;&gt;PERFSTAT&lt;/span&gt; user that owns the Statspack repository.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; @?/rdbms/admin/spcreate&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Enable the automatic gathering of Statspack statistics:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; @?/rdbms/admin/spauto&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;After some snapshots have been gathered, you can run the following script as the &lt;span class=&quot;caps&quot;&gt;PERFSTAT&lt;/span&gt; user to create a Statspack report:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;SQL&amp;gt; @?/rdbms/admin/spreport&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The Statspack historical performance statistical data is stored in the &lt;span class=&quot;caps&quot;&gt;STAT&lt;/span&gt;$SQL_SUMMARY table and the &lt;span class=&quot;caps&quot;&gt;STATS&lt;/span&gt;$&lt;span class=&quot;caps&quot;&gt;SNAPSHOT&lt;/span&gt; table contains a record for each Statspack snapshot.&lt;/p&gt;</content>
+ </entry>
+ 
+ <entry>
+   <title>最近喜欢的书</title>
+   <link href="http://kyle.xlau.org/posts/favorite-books.html"/>
+   <updated>2011-07-29T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/favorite-books</id>
+   <content type="html">&lt;p&gt;我爱读书，更爱读人。我不喜欢的作者，书写得再好，我也不会喜欢他的书。我曾以为，在当代除王小波外，找不到可以一读的中文书了，其实不然。最近我又发现不少我喜欢的作家。&lt;/p&gt;
+&lt;p&gt;近几年，我先后读到了杨小凯、高行健、野夫和高尔泰这四个人的五本书。除了杨小凯是我大学的时候读的，其他三位都是我今年才读到的。&lt;/p&gt;
+&lt;p&gt;我喜欢这四个人。他们都是当局的眼中钉，都受过共产党的迫害，坐过共产党的牢。除了杨小凯已经逝世，其他三位均健在，野夫隐居云南写作，高行健生活在法国，高尔泰在美国。&lt;/p&gt;
+&lt;p&gt;杨小凯和野夫是心怀天下，高行健和高尔泰则是极端个人主义和追求自由。&lt;/p&gt;
+&lt;h2&gt;杨小凯，《牛鬼蛇神录》&lt;/h2&gt;
+&lt;p&gt;杨小凯有很多经济学著作，被很多媒体盛赞有拿诺贝尔经济学奖的潜力。我只看过他一本书，讲他文革期间坐牢十年的经历。&lt;/p&gt;
+&lt;h2&gt;高行健，《一个人的圣经》，《灵山》&lt;/h2&gt;
+&lt;p&gt;《灵山》被人提到的多一些，但我更喜欢《一个人的圣经》。书里写到了很多作者文革期间和文革之后的个人经历。&lt;/p&gt;
+&lt;h2&gt;野夫，《尘世·挽歌》&lt;/h2&gt;
+&lt;p&gt;野夫是四个人中最年轻的一个。他没有经历文革，他的文章里更多的是回忆他父母辈人的生活。他六四期间在海南做警察，六四后因同情六四坐过牢。&lt;/p&gt;
+&lt;h2&gt;高尔泰，《寻找家园》&lt;/h2&gt;
+&lt;p&gt;他是右派，从甘肃夹边沟劳改场死里逃生。六四后也被短暂关押，之后经香港逃到美国。他被称为是美学家，画家，我觉得他也是很好的作家。&lt;/p&gt;
+&lt;p&gt;本书基本可以算是作者的自传，从出生写到逃亡美国。作者写自己的人生，也是在写中国的现代史。从这样的书里读到的历史，是更鲜活、更真实的历史。&lt;/p&gt;</content>
+ </entry>
+ 
+ <entry>
+   <title>Rails官方文档</title>
+   <link href="http://kyle.xlau.org/posts/rails-doc.html"/>
+   <updated>2011-07-26T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/rails-doc</id>
+   <content type="html">&lt;h2&gt;Rails Documentation Projects&lt;/h2&gt;
+&lt;h3&gt;RDoc&lt;/h3&gt;
+&lt;p&gt;这些文档由开发者编写，以注释形式写在Rails源代码里。官方网站 &lt;a href=&quot;http://api.rubyonrails.org/&quot;&gt;api.rubyonrails.org&lt;/a&gt; 有最新的HTML格式文档。这些文档，是已经比较熟悉Ruby和Rails的程序员们的参考手册。&lt;/p&gt;
+&lt;h3&gt;Rails Guides&lt;/h3&gt;
+&lt;p&gt;官方网站 &lt;a href=&quot;http://guides.rubyonrails.org/&quot;&gt;guides.rubyonrails.org&lt;/a&gt; 。初学者应该参考这里，针对特定领域的How to式文档。这里的文档质量较高。使用Textile格式编写。&lt;/p&gt;
+&lt;h3&gt;Rails Book&lt;/h3&gt;
+&lt;p&gt;开发者们有计划要写这么一本书出来。现在两年多过去了，这本书还没有影子。这个项目应该算是失败了。免费的 &lt;a href=&quot;raisl_tutorial&quot;&gt;Ruby on Rails 3 Tutorial&lt;/a&gt; 也许可以勉强代替这个计划。&lt;/p&gt;
+&lt;h3&gt;Rails Wiki&lt;/h3&gt;
+&lt;p&gt;官方网站 &lt;a href=&quot;http://wiki.rubyonrails.org/&quot;&gt;wiki.rubyonrails.org&lt;/a&gt; 。似乎是用docuwiki做的。我用Chrome和Firefox在这个wiki里都看不到任何内容，只能看到讨论。也许只支持IE，或者Safari。无法想象Rails的官方wiki竟然是用PHP写的docuwiki搭建的。&lt;/p&gt;
+&lt;h2&gt;Rails Has Great Documentation&lt;/h2&gt;
+&lt;p&gt;似乎Rails初学者们普遍认为Rails的官方文档非常差劲。我认为对于初学者来说，只有官方的Guides还值得读下。&lt;/p&gt;
+&lt;p&gt;然后有Rails开发者在 &lt;a href=&quot;http://weblog.rubyonrails.org/&quot;&gt;官方博客&lt;/a&gt; 上回应，说Rails的文档很棒。然后举了很多高质量的文档例子，当然大部分是非官方的。确实，非官方的Rails文档还是很棒的。&lt;/p&gt;
+&lt;p&gt;只是，初学者指责Rails官方文档差劲，开发者回应非官方文档很棒，这有点回避问题了。&lt;/p&gt;
+
+
+
+</content>
+ </entry>
+ 
+ <entry>
+   <title>如何读懂Oracle文档中的语法图</title>
+   <link href="http://kyle.xlau.org/posts/syntax-diagrams.html"/>
+   <updated>2011-06-19T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/syntax-diagrams</id>
+   <content type="html">&lt;p&gt;Oracle文档中用到了两种表达语法的方法，语法图和BNF。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;http://en.wikipedia.org/wiki/Backus%E2%80%93Naur_Form&quot;&gt;&lt;span class=&quot;caps&quot;&gt;BNF&lt;/span&gt;&lt;/a&gt;, Backus-Naur Form，中文是巴科斯范式:，它是由约翰·巴科斯（John Backus）和彼得·诺尔（Peter Naur）引入的用来描述计算机语言语法的符号集。&lt;/p&gt;
+&lt;p&gt;首先来看语法图。读语法图，要从左到右，顺着箭头读。&lt;/p&gt;
+&lt;p&gt;不同形状的含义：&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;长方形中的大写词语，命令。&lt;/li&gt;
+	&lt;li&gt;椭圆形中的小写词语，参数。&lt;/li&gt;
+	&lt;li&gt;圆形中，标点符号、操作符、分隔符、终止符。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;如果图有几条路径，可以随便选择一条，每条都是正确的语法。&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;主路径(Main Path)：箭头指向的一条直线。&lt;/li&gt;
+	&lt;li&gt;必选关键词：可以是只有一个图形，说明必选这一个；也可以是垂直排列的几个图形，说明必选其一。&lt;/li&gt;
+	&lt;li&gt;可选关键词：在主路径之外就是可选的。&lt;/li&gt;
+	&lt;li&gt;语法循环(Sytax Loop)：对一种语法循环使用。&lt;/li&gt;
+	&lt;li&gt;标示符规则：标示符不能超过30字符，必须以字母开头。标示符不区分大小写，除非在双引号内。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;每个语法图都有一个指向同义的BNF表达式的链接。&lt;/p&gt;
+&lt;p&gt;BNF表达式用到的符号含义：&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;[]，可选项&lt;/li&gt;
+	&lt;li&gt;{}，必选其一&lt;/li&gt;
+	&lt;li&gt;|，分隔不同选项&lt;/li&gt;
+	&lt;li&gt;&amp;#8230;，可重复语法&lt;/li&gt;
+	&lt;li&gt;分隔符，不同之前四个其他分隔符要照其原样输入&lt;/li&gt;
+	&lt;li&gt;粗体，粗体的是关键字，必须照其原样输入；非大写字符，是占位符，不需原样输入，得用其他值代替。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;本文是SQL Language Reference的附录A &lt;a href=&quot;http://download.oracle.com/docs/cd/E11882_01/server.112/e17118/ap_syntx.htm&quot;&gt;How to Read Syntax Diagrams&lt;/a&gt; 的读书笔记，是直接从英文翻译过来的，可能只有我自己看的懂。但读完这一节后，读懂语法图对我来说再没有难度了。&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Oracle官方文档</title>
+   <link href="http://kyle.xlau.org/posts/oracle-docs.html"/>
+   <updated>2011-06-19T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/oracle-docs</id>
+   <content type="html">&lt;p&gt;我之前接触过一些软件产品，如Linux、Emacs、Python、Ruby等。这些产品和文档都是由开源社区的黑客们自愿免费维护。黑客当然更喜欢写代码，文档比起商业产品来，还是差得太远。&lt;/p&gt;
+&lt;p&gt;Oracle的官方文档是我见过的最详尽的软件产品文档。Oracle的文档以书的形式组织，以Oracle 11gR2的官方文档为例，有220多本书。有些发行注记、安装手册什么的非常短，但是长篇文档也不再少数。&lt;/p&gt;
+&lt;p&gt;Oracle从11g开始，官方文档除pdf和html两种格式外，也增加了mobi和epub版本。Oracle称 新加的两种格式为移动格式，供移动设备使用，如Kindle和iOS设备。&lt;/p&gt;
+&lt;p&gt;我现在的读书习惯是，只读电子书，在电脑面前，就用电脑（PC或笔记本）读，不在电脑面前，就用Kindle读。用Kindle读某些书比用电脑读有效率，比如小说散文等。编程或技术类的书籍，在电脑上读PDF是更好的选择，因为可以做笔记，可以跑代码，可以做实验，这是Kindle无法做到的。&lt;/p&gt;
+&lt;p&gt;要一一去阅读Oracle这么多的官方文档，是不可能的。学习Oracle，根据一些高手的意见，一般是读了官方的Concept文档后，就去读出版的书籍，庞大的官方文档作为参考资料。&lt;/p&gt;
+&lt;p&gt;我花了不少时间研究哪些官方文档是重要的，值得常常翻阅和参考，每本重要的官方文档里有什么大致内容，什么情况下我们需要去参考它。&lt;/p&gt;
+&lt;p&gt;文档类型：&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;Guide，指南，这类属于可以用来从头读到尾的。&lt;/li&gt;
+	&lt;li&gt;2 Day, 两天系列。快速指南，这类也是可读的。&lt;/li&gt;
+	&lt;li&gt;Reference，参考，有不懂处快速搜索这里。&lt;/li&gt;
+	&lt;li&gt;Quick Reference，快速参考，比较短。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;每一份文档都有一个编号，叫做Part Number。每个版本的Oracle，有很多名字相同的文档，但PN是唯一的。&lt;/p&gt;
+&lt;p&gt;文档分类，Oracle 11gR2的分类方式：&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;Server
+	&lt;ul&gt;
+		&lt;li&gt;Administration, Concepts, and Reference&lt;/li&gt;
+		&lt;li&gt;Application Development&lt;/li&gt;
+		&lt;li&gt;Application Express&lt;/li&gt;
+		&lt;li&gt;Backup and Recovery&lt;/li&gt;
+		&lt;li&gt;Data Warahousing&lt;/li&gt;
+		&lt;li&gt;Languge and Interface&lt;/li&gt;
+		&lt;li&gt;Networking and Security&lt;/li&gt;
+		&lt;li&gt;Oracle Real Application Clusters&lt;/li&gt;
+		&lt;li&gt;Streams and Replication&lt;/li&gt;
+		&lt;li&gt;XStream&lt;/li&gt;
+	&lt;/ul&gt;&lt;/li&gt;
+	&lt;li&gt;Spatial&lt;/li&gt;
+	&lt;li&gt;Windows&lt;/li&gt;
+	&lt;li&gt;Gateway&lt;/li&gt;
+	&lt;li&gt;Communications Data Model&lt;/li&gt;
+	&lt;li&gt;Java Development&lt;/li&gt;
+	&lt;li&gt;Release Notes&lt;/li&gt;
+	&lt;li&gt;Data Mining&lt;/li&gt;
+	&lt;li&gt;TimesTen In-Memory Database&lt;/li&gt;
+	&lt;li&gt;Documentation Library&lt;/li&gt;
+	&lt;li&gt;Warehouse Builder&lt;/li&gt;
+	&lt;li&gt;&lt;span class=&quot;caps&quot;&gt;OLAP&lt;/span&gt;&lt;/li&gt;
+	&lt;li&gt;Multimedia&lt;/li&gt;
+	&lt;li&gt;Installation Guide&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;具体每一本手册大致讲什么，可以查New Features Guide，列一些我比较感兴趣的和比较重要的：&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;Server Administration, Concepts, and Reference
+	&lt;ul&gt;
+		&lt;li&gt;Concepts&lt;/li&gt;
+		&lt;li&gt;Reference&lt;/li&gt;
+		&lt;li&gt;Utility&lt;/li&gt;
+		&lt;li&gt;Error Messages&lt;/li&gt;
+		&lt;li&gt;High Availability Overview&lt;/li&gt;
+		&lt;li&gt;Administrator&amp;#8217;s Guide&lt;/li&gt;
+		&lt;li&gt;Performance Tuning Guide&lt;/li&gt;
+		&lt;li&gt;New Features Guide&lt;/li&gt;
+		&lt;li&gt;Upgrade Guide&lt;/li&gt;
+		&lt;li&gt;&lt;span class=&quot;caps&quot;&gt;SQL&lt;/span&gt; Language Reference&lt;/li&gt;
+		&lt;li&gt;PL/&lt;span class=&quot;caps&quot;&gt;SQL&lt;/span&gt; Language Reference&lt;/li&gt;
+		&lt;li&gt;PL/&lt;span class=&quot;caps&quot;&gt;SQL&lt;/span&gt; Packages and Types Reference&lt;/li&gt;
+	&lt;/ul&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;ul&gt;
+	&lt;li&gt;Server Backup and Recovery
+	&lt;ul&gt;
+		&lt;li&gt;Backup and Recovery User&amp;#8217;s Guide&lt;/li&gt;
+		&lt;li&gt;Backup and Recovery Reference&lt;/li&gt;
+	&lt;/ul&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;ul&gt;
+	&lt;li&gt;Server &lt;span class=&quot;caps&quot;&gt;RAC&lt;/span&gt;
+	&lt;ul&gt;
+		&lt;li&gt;Clusterware Administration and Deployment Guide&lt;/li&gt;
+		&lt;li&gt;Real Application Clusters Administration and Deployment Guide&lt;/li&gt;
+	&lt;/ul&gt;&lt;/li&gt;
+&lt;/ul&gt;</content>
+ </entry>
+ 
+ <entry>
+   <title>在Windows下使用Emacs的技巧</title>
+   <link href="http://kyle.xlau.org/posts/emacs-w32.html"/>
+   <updated>2011-01-03T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/emacs-w32</id>
+   <content type="html">&lt;h2&gt;加一个&quot;Open In Emacs&quot;选项&lt;/h2&gt;
+
+&lt;p&gt;如果开了 Emacs Server mode，就用 emacsclientw.exe。如果没有开 Emacs Server mode，或者没有开 Emacs，就用 runemacs.exe 重新打开一个。&lt;/p&gt;
+
+&lt;pre&gt;
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\*\Shell\Open In Emacs\Command]
+@=&quot;\&quot;D:\\Program Files\\emacs-24.0.50\\bin\\emacsclientw.exe\&quot; -a \&quot;D:\\Program Files\\emacs-24.0.50\\bin\\runemacs.exe\&quot; \&quot;%1\&quot;&quot;
+&lt;/pre&gt;
+
+
+&lt;h2&gt;将 Caps Lock 键改成 Ctrl 键&lt;/h2&gt;
+
+&lt;p&gt;Google 新推出的 Cr-48 上网本，也是没有 Caps Lock 键的。Caps Lock 键换成搜索键了。我也觉得这个键是没有必要的。如果你需要打大写字母，按住 Shift 键就够了。&lt;/p&gt;
+
+&lt;p&gt;以前我都是把 Ctrl 键和 Caps Lock 键互换，这次将 Caps Lock 键改成 Ctrl 键，Ctrl 键还是 Ctrl 键。&lt;/p&gt;
+
+&lt;pre&gt;
+Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Keyboard Layout]
+&quot;Scancode Map&quot;=hex:00,00,00,00,00,00,00,00,02,00,00,00,1d,00,3a,00,00,00,00,00
+&lt;/pre&gt;
+
+
+&lt;h2&gt;设置拼写检查&lt;/h2&gt;
+
+&lt;p&gt;首先安装 aspell，下载地址在&lt;a href=&quot;http://aspell.net/win32/&quot;&gt;http://aspell.net/win32/&lt;/a&gt;。注意还要安装字典文件，不然 aspell 是没法用的。&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;scm&quot;&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq-default&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;ispell-program-name&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;D:\\Program Files\\Aspell\\bin\\aspell.exe&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;setq&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;text-mode-hook&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;lambda&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+                      &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;flyspell-mode&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;t&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+                      &lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;参考&lt;/h2&gt;
+
+&lt;p&gt;并不是翻译，只是参考。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://www.arunrocks.com/blog/archives/2008/02/20/5-indespensible-tips-for-emacs-on-windows/&quot;&gt;http://www.arunrocks.com/blog/archives/2008/02/20/5-indespensible-tips-for-emacs-on-windows/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://www.wired.com/gadgetlab/2010/12/googles-gorgeous-cr-48-notebook-ditches-caps-lock/&quot;&gt;http://www.wired.com/gadgetlab/2010/12/googles-gorgeous-cr-48-notebook-ditches-caps-lock/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://www.gnu.org/software/emacs/windows/big.html#Text-and-Utility-modes&quot;&gt;http://www.gnu.org/software/emacs/windows/big.html#Text-and-Utility-modes&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://aspell.net/win32/&quot;&gt;http://aspell.net/win32/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+</content>
+ </entry>
+ 
+ <entry>
+   <title>怎样学Ruby和Rails</title>
+   <link href="http://kyle.xlau.org/posts/ruby.html"/>
+   <updated>2010-12-29T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/ruby</id>
+   <content type="html">&lt;h2&gt;为什么对Ruby感兴趣&lt;/h2&gt;
+
+&lt;p&gt;最近我对Ruby产生了浓厚兴趣。之前学过一段时间的Python，感觉Python虽然用途比Ruby更广泛，却不适合我。&lt;/p&gt;
+
+&lt;p&gt;Python的哲学是：&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;
+There should be one and preferably only one &amp;ndash; obvious way to do it!
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Python的创造者认为一定有一种最佳的方法去完成某件事。这种哲学有点过于死板，也不符合现实。&lt;/p&gt;
+
+&lt;p&gt;Perl的格言是：&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;
+There&amp;rsquo;s more than one way to do it!
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Larry Wall认为可以用许多不同的方法，去完成同一件事情。显然，我是更认同Perl的哲学的。&lt;/p&gt;
+
+&lt;p&gt;Ruby的格言是，程序员之友（A Programmer&amp;rsquo;s Best Friend）。Ruby是以人为中心，为程序员的方便而创造的编程语言。&lt;/p&gt;
+
+&lt;p&gt;Ruby继承了很多Perl的精华和哲学。所以，相对Python，我更喜欢Ruby。&lt;/p&gt;
+
+&lt;h2&gt;别人是怎么学Ruby的&lt;/h2&gt;
+
+&lt;p&gt;不同的人有不同的背景，有不同的学习方式。&lt;/p&gt;
+
+&lt;p&gt;这里有一大堆Rails社区中的领军人物说他们是怎么学会Ruby和Rails的：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;DHH&lt;/em&gt;: I learned Ruby by programming in anger. Attempting to make something real. Not just a toy program.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;David Black&lt;/em&gt;: I learned ruby via pickaxe and lots of practice and both reading and answering questions on ruby-talk.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Evan Phoenix&lt;/em&gt;: reading code WHILE writing code&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Yehuda Katz&lt;/em&gt;: I tried impossibly hard things to force myself to learn.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Laurent Sansonetti&lt;/em&gt;: I learned ruby via pickaxe, reading the posts on ruby-talk and then reading MRI&amp;rsquo;s source code&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Ninh Bui&lt;/em&gt;: I was quite a java fanboy back, writing struts + j2ee enterprise apps, Hongli forced me to look at Ruby over a weekend and I learned the Ruby basics. I then learned Rails by googling, reading books and source code.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Tim Connor&lt;/em&gt;: the rails community habit of obsessively blogging was probably the biggest help&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Lar Van Der Jagt&lt;/em&gt;: Ryan Bates&amp;rsquo;s &lt;a href=&quot;http://railscasts.com/&quot;&gt;railscasts&lt;/a&gt; for sure. The Rails Way once I knew enough to dig deeper. What I wish I&amp;rsquo;d done tho is work with experts!&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Arun Gupta&lt;/em&gt;: The Rails guides and Agile Development with Rails book.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Geoffrey Grosenbach&lt;/em&gt;: After I had read a few tutorials, I started by spending a few hours reading through the API docs. Even if you don&amp;rsquo;t understand everything, it&amp;rsquo;s a fantastic way to become familiar with what&amp;rsquo;s available.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Nate Todd&lt;/em&gt;: I learned MVC with a few CakePHP apps first. It helped me learn best practices in a language I was familiar with.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Chris Wanstrath&lt;/em&gt;: I learned Ruby on Rails by writing apps and reading the framework&amp;rsquo;s source.&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;从他们的经验里，我学到的是，最佳的学习方式是自己写实用的代码，其次是读别人写的好代码，再其次是读经典的好书。&lt;/p&gt;
+
+&lt;h2&gt;别人的建议&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;Bob Martens&lt;/em&gt;: Get involved in the community in some way. They know more than you. ;)&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Ismael Celis&lt;/em&gt;: understanding the relationship between the parts of MVC. Loads of people coming to Rails don&amp;rsquo;t know what a design pattern is.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;@jeromegn&lt;/em&gt;: I find the best trick to learn RoR is to simply try building something. Rails docs and learning Ruby in parallel helped me the most&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;@johnbender&lt;/em&gt;: knowing why instance vars are available in templates, etc. Essentially knowing the basics of ruby would be my initial advice&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;@ryandotsmith&lt;/em&gt;: writers read. Find popular projects on github (i.e. radiant ) and study their specs.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Sunil Karkera&lt;/em&gt;: understanding MVC in Rails was the most important thing for me when I started.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Luke Burton&lt;/em&gt;: basic screencasts showing something impressive being achieved in small amounts of code were a great start&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;DHH&lt;/em&gt;: Pick a real project and program in anger. That&amp;rsquo;s how I&amp;rsquo;d recommend learning any language including Rails and Ruby.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Anthony Green&lt;/em&gt;: Accept that there&amp;rsquo;s a Rails Way and you need to learn it. What helped me most ? &amp;ndash; the community.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Kent Fenwick&lt;/em&gt;: Learn by doing a REAL project. Pick something you want to build and slowly chip away at it.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Trevor Turk&lt;/em&gt;: learn by reading and writing codes meaning you should try to build something you want instead of dumbly following tutorials.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Ryan Bates&lt;/em&gt;: Rails is made up of many technologies (HTML, CSS, Ruby, OOP, SQL, etc.). If you&amp;rsquo;re struggling with Rails, focus on weakest part.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Geoffrey Grosenbach&lt;/em&gt;: And there are many examples throughout that will help a new developer get a feel for the philosophy of Rails. Many people have learned from the Rails from Scratch series at PeepCode&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;@eifon&lt;/em&gt;: A good grasp of MVC is invaluable as is knowing some Ruby before you start.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;John Yerhot&lt;/em&gt;: don&amp;rsquo;t be afraid to ask questions and use support channels &amp;ndash; irc, mail list, rails bridge, etc.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Roy Wright&lt;/em&gt;: use the same version of rails as is in the book you are using.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;@brianthecoder&lt;/em&gt;: read other people&amp;rsquo;s code&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Ninh Bui&lt;/em&gt;: I learned by having discussions with a lot of people, I can definitely recommend that&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Chris Wanstrath&lt;/em&gt;: Stop asking other people for advice and start coding something.&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;最后一条建议是，不要去寻求别人的建议了，现在就开始写点代码吧。所以说，编程这件事，终极建议仍然是，写代码。代码写的越多，编程水平越高。&lt;/p&gt;
+
+&lt;p&gt;读完这一堆的建议，我得到的感悟是：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;自己写代码最重要。&lt;/li&gt;
+&lt;li&gt;读别人的代码其次。&lt;/li&gt;
+&lt;li&gt;理解MVC是什么也很重要。&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;到哪里去找别人的代码读，&lt;a href=&quot;https://github.com&quot;&gt;Github&lt;/a&gt;是最佳场所。注意别人是怎么解决你所解决不了的问题的。当然，先要自己写点代码才会有解决不了的问题。&lt;/p&gt;
+
+&lt;h2&gt;How Person 和 Why Person&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;How Person: 喜欢问要怎样做的人。别人做一遍给他看，他就学会了。&lt;/li&gt;
+&lt;li&gt;Why Person: 喜欢问是为什么的人。首先得理解了为什么要那样做，然后才能去做。&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;How Person应该看&lt;a href=&quot;http://railscasts.com/&quot;&gt;railscasts&lt;/a&gt;，读&lt;a href=&quot;http://guides.rubyonrails.org/&quot;&gt;Ruby on Rails Guides&lt;/a&gt;。还有这里&lt;a href=&quot;http://www.pragprog.com/screencasts&quot;&gt;http://www.pragprog.com/screencasts&lt;/a&gt;。&lt;/p&gt;
+
+&lt;p&gt;Why Person应该读&lt;em&gt;Ruby Programming Language&lt;/em&gt;和&lt;em&gt;The Well-Grounded Rubyist, aka Ruby for Rails 2nd edition&lt;/em&gt;。&lt;/p&gt;
+
+&lt;p&gt;我自觉是Why Person。但是看视频和例子，对我也很有帮助。&lt;/p&gt;
+
+&lt;p&gt;两本Way书：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;The Ruby Way for Why Person&lt;/li&gt;
+&lt;li&gt;The Rails Way for How Person&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;h2&gt;学习者的境界&lt;/h2&gt;
+
+&lt;h3&gt;第一层，写了一些Rails程序&lt;/h3&gt;
+
+&lt;p&gt;已经可以熟练编写Rails程序了。还要继续学习，离大师的境界还很远。&lt;/p&gt;
+
+&lt;p&gt;问自己一些问题：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;会写测试吗？&lt;/li&gt;
+&lt;li&gt;会自己写Rails插件吗？&lt;/li&gt;
+&lt;li&gt;会打gem包吗？&lt;/li&gt;
+&lt;li&gt;Javascript技术熟不熟悉？&lt;/li&gt;
+&lt;li&gt;CSS呢？&lt;/li&gt;
+&lt;li&gt;数据库技术呢？&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;这时候你还有很多弱点。但你已经可以去贡献一点代码给其他开源项目了。&lt;/p&gt;
+
+&lt;h3&gt;第二层，写了不少Rails程序，写了一些Rails插件，写了一些Gem包&lt;/h3&gt;
+
+&lt;p&gt;这时候，你已经对RoR非常熟悉了。可以去读点Ruby的源代码了。&lt;/p&gt;
+
+&lt;p&gt;这个时候，该学点其他的编程语言了，如Python，Java，Scala，Clojure，Objective-C，Ocaml，Scheme之类。总之，只要你感兴趣的编程语言，这时都可以学一点。并不一定要成为这些语言的专家，但要试着去理解它们的利与弊。这会拓宽你的视眼，也能加强你的Ruby技术。&lt;/p&gt;
+
+&lt;p&gt;也就是说，编程语言的学习，当精通一门之后，就开始多多益善。&lt;/p&gt;
+
+&lt;h3&gt;第三层，比任何人精通RoR，甚至可以背诵Ruby源码了&lt;/h3&gt;
+
+&lt;p&gt;这时你应该去试着改善Ruby 1.9，以及其他的Ruby实现，如JRuby，IronRuby，MacRUby和Rubinius。你还应该贡献点代码给Rails 3了。&lt;/p&gt;
+
+&lt;p&gt;你已经是大师了。&lt;/p&gt;
+
+&lt;h2&gt;Reference&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://weblog.rubyonrails.org/2009/8/3/how-do-i-learn-ruby-rails&quot;&gt;http://weblog.rubyonrails.org/2009/8/3/how-do-i-learn-ruby-rails&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Github Page 绑定域名</title>
+   <link href="http://kyle.xlau.org/posts/github-cname.html"/>
+   <updated>2010-12-29T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/github-cname</id>
+   <content type="html">&lt;h2&gt;CNAME&lt;/h2&gt;
+
+&lt;p&gt;创建一个CNAME文件，内容是你的域名，如：&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;
+xlau.org
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;然后把此文件添加到Github仓库，上传到Github。Github服务器会设置&lt;code&gt;xlau.org&lt;/code&gt;为你的主域名，然后将&lt;code&gt;www.xlau.org&lt;/code&gt;和&lt;code&gt;kylexlau.github.com&lt;/code&gt;重定向到&lt;code&gt;xlau.org&lt;/code&gt;。&lt;/p&gt;
+
+&lt;h2&gt;DNS&lt;/h2&gt;
+
+&lt;p&gt;登陆你的域名管理界面。创建一条A记录，指向&lt;code&gt;207.97.227.245&lt;/code&gt;这个IP地址。&lt;/p&gt;
+
+&lt;p&gt;如果是用子域名，如&lt;code&gt;kyle.xlau.org&lt;/code&gt;。只需要创建一条CNAME记录，指向&lt;code&gt;kyle.xlau.org&lt;/code&gt;。&lt;/p&gt;
+
+&lt;h2&gt;子域名&lt;/h2&gt;
+
+&lt;p&gt;我以&lt;code&gt;kyle.xlau.org&lt;/code&gt;为我的博客域名，指向Github Page。&lt;/p&gt;
+
+&lt;p&gt;我需要做的设置：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;创建CNAME文件，内容为&lt;code&gt;kyle.xlau.org&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;登陆域名管理，创建CNAME记录，&lt;code&gt;kyle -&amp;gt; kylexlau.github.com&lt;/code&gt;。&lt;/li&gt;
+&lt;/ul&gt;
+
+
+&lt;p&gt;Github虽然很好，可毕竟是免费的，还是有不少限制的。写到这里，特意去看了下Github对免费用户究竟有什么限制。发现除了300M的空间限制（还是所谓软限制），没有其他限制。所以用它来作为博客平台，真是再理想不过了。&lt;/p&gt;
+
+&lt;p&gt;但是我还是将&lt;code&gt;xlau.org&lt;/code&gt;和&lt;code&gt;www.xlau.org&lt;/code&gt;指向免费的Amazon EC2，毕竟这个要强大多了。等明年EC2收费了，我也许要再买个VPS玩玩。&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>设置Disqus</title>
+   <link href="http://kyle.xlau.org/posts/disqus.html"/>
+   <updated>2010-12-29T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/disqus</id>
+   <content type="html">&lt;h2&gt;为什么用Disqus&lt;/h2&gt;
+
+&lt;p&gt;使用Github Page写博客，Github用Jekyll将我的markdown源码转换成静态网页。静态网页没法加评论功能，于是只能用Disqus了。&lt;/p&gt;
+
+&lt;p&gt;Disqus是一段Javascript代码，提供评论系统的功能。评论数据都保留Disqus的网站上。&lt;/p&gt;
+
+&lt;h2&gt;如何使用&lt;/h2&gt;
+
+&lt;p&gt;在网页模板里嵌入一段Javascript代码就行。&lt;/p&gt;
+
+&lt;p&gt;代码如下：&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;javascript&quot;&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;div&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;disqus_thread&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;/div&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;script&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;type&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;text/javascript&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;cm&quot;&gt;/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */&lt;/span&gt;
+    &lt;span class=&quot;kd&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;disqus_shortname&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;example&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// required: replace example with your forum shortname&lt;/span&gt;
+
+    &lt;span class=&quot;c1&quot;&gt;// The following are highly recommended additional parameters. Remove the slashes in front to use.&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;// var disqus_identifier = &amp;#39;unique_dynamic_id_1234&amp;#39;;&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;// var disqus_url = &amp;#39;http://example.com/permalink-to-page.html&amp;#39;;&lt;/span&gt;
+
+    &lt;span class=&quot;cm&quot;&gt;/* * * DON&amp;#39;T EDIT BELOW THIS LINE * * */&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;kd&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;dsq&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;document&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;createElement&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;script&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;dsq&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;text/javascript&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;dsq&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;async&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kc&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;nx&quot;&gt;dsq&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;src&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;http://&amp;#39;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;disqus_shortname&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;.disqus.com/embed.js&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;document&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;getElementsByTagName&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;head&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;document&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;getElementsByTagName&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;body&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]).&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;appendChild&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;dsq&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;})();&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;/script&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;noscript&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Please&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;enable&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;JavaScript&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;to&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;view&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;the&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;href&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;http://disqus.com/?ref_noscript&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;comments&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;powered&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;by&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Disqus&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;/a&amp;gt;&amp;lt;/noscript&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;href&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;http://disqus.com&amp;quot;&lt;/span&gt; &lt;span class=&quot;kr&quot;&gt;class&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;dsq-brlink&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;blog&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;comments&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;powered&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;by&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;span&lt;/span&gt; &lt;span class=&quot;kr&quot;&gt;class&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;logo-disqus&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Disqus&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;/span&amp;gt;&amp;lt;/a&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;参见&lt;a href=&quot;http://docs.disqus.com/developers/universal/&quot;&gt;官方文档&lt;/a&gt;。&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>像黑客一样写博客</title>
+   <link href="http://kyle.xlau.org/posts/blogging-like-a-hacker.html"/>
+   <updated>2009-08-13T00:00:00+08:00</updated>
+   <id>http://kyle.xlau.org/posts/blogging-like-a-hacker</id>
+   <content type="html">&lt;p&gt;用Jekyll来重建我博客。先翻译一篇Jekyll作者的文章。原文没有脚注，我加这些脚注只是因为Textile添加脚注很方便。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;http://tom.preston-werner.com/2008/11/17/blogging-like-a-hacker.html&quot;&gt;原文地址&lt;/a&gt; 和 &lt;a href=&quot;http://github.com/mojombo/tpw/raw/03fa4247b2f4ba620661d9025c336f167aa11ba2/_posts/2008-11-17-blogging-like-a-hacker.textile&quot;&gt;原文源代码&lt;/a&gt;&lt;/p&gt;
+&lt;h2&gt;译文：&lt;/h2&gt;
+&lt;p&gt;2000年时，我以为我将成为一个专业作家。于是我跟其他一些有抱负的诗人和作家一起，每天花几个小时在LiveJournal&lt;sup class=&quot;footnote&quot; id=&quot;fnr1&quot;&gt;&lt;a href=&quot;#fn1&quot;&gt;1&lt;/a&gt;&lt;/sup&gt;上练习写作。从那时起，我已经先后在三个不同的域名下写过博客。我写过的博客内容包括：web标准、印刷设计（print design）、摄影、Flash、插图（illustration）、信息架构、ColdFusion、软件包管理（package management）、PHP、CSS、广告、Ruby、Rails、Erlang。&lt;/p&gt;
+&lt;p&gt;我热爱写作。我喜欢与别人分享我的思想。将想法转变成文字，能非常有效地深化对某一话题的思考。但虽然我很喜欢写博客，我却陷入了一个循环，放弃一段，又继续开始。在这次又重新开始写博客前，我做了一些反省，试图找到造成这种恶性循环的原因是什么。&lt;/p&gt;
+&lt;p&gt;我已经知道什么是我不想要的。我厌倦了那些复杂的博客管理系统，如WordPress和Mephisto。我只想写些好文章，而不是整天修改页面模板，审核评论，升级博客系统。Posterous&lt;sup class=&quot;footnote&quot; id=&quot;fnr2&quot;&gt;&lt;a href=&quot;#fn2&quot;&gt;2&lt;/a&gt;&lt;/sup&gt;看起来不错，但我想控制自己博客的样式，选择自己的独立域名。基于同样的理由，其他一些提供博客服务的站点，如wordpress.com和blogger.com，均不符合我的要求。有些人直接用GitHub&lt;sup class=&quot;footnote&quot; id=&quot;fnr3&quot;&gt;&lt;a href=&quot;#fn3&quot;&gt;3&lt;/a&gt;&lt;/sup&gt;写博客，这很酷，但不符我的口味。&lt;/p&gt;
+&lt;p&gt;2008年10月19日，星期六，我坐在旧金山的公寓里，手拿一杯苹果汁，头脑清醒。经过一阵沉思，我有了个好注意。我不是一个专业的散文作家，我是个专业程序员。如果我以软件开发的角度看待写博客，那将会是什么样子的？&lt;/p&gt;
+&lt;p&gt;首先，所有我的作品都将保存在一个Git&lt;sup class=&quot;footnote&quot; id=&quot;fnr4&quot;&gt;&lt;a href=&quot;#fn4&quot;&gt;4&lt;/a&gt;&lt;/sup&gt;仓库里。这让确保我可以在我偏爱的文本编辑器和命令行下，舒服地尝试各种想法的写作，浏览已写文章。我将可以用一个简单的部署脚本或者是提交后钩子（post-commit hook）发布文章。为保持最小的复杂性，相对一个需要不断维护的动态网站，静态网站更好。我的博客必须容易自定义。我的美工（graphic design）背景让我喜欢经常调整网站的外观和布局。&lt;/p&gt;
+&lt;p&gt;在过去的几个月里，我写了Jekyll来实现这些概念。Jekyll是一个简单的，适合博客的（blog aware），静态网站生成器。输入一个模板目录（代表网站的原始形态），经过Texitile&lt;sup class=&quot;footnote&quot; id=&quot;fnr5&quot;&gt;&lt;a href=&quot;#fn5&quot;&gt;5&lt;/a&gt;&lt;/sup&gt;和Liquid&lt;sup class=&quot;footnote&quot; id=&quot;fnr6&quot;&gt;&lt;a href=&quot;#fn6&quot;&gt;6&lt;/a&gt;&lt;/sup&gt;转换，输出一个完全静态的网站。如果你在我的网站上阅读本文，你看到的就是一个用Jekyll生成的博客网站（译者的网站也是）。&lt;/p&gt;
+&lt;p&gt;想理解这究竟是如何工作的，在新窗口打开我的 &lt;a href=&quot;http://github.com/mojombo/tpw&quot;&gt;&lt;span class=&quot;caps&quot;&gt;TPW&lt;/span&gt;&lt;/a&gt; Git仓库。我将参照那里的代码来解释。&lt;/p&gt;
+&lt;p&gt;首先看 &lt;a href=&quot;http://github.com/mojombo/tpw/tree/master/index.html&quot;&gt;index.html&lt;/a&gt;. 这是网站的首页。此文件的最上面几行是一段包含文件元数据的YAML&lt;sup class=&quot;footnote&quot; id=&quot;fnr7&quot;&gt;&lt;a href=&quot;#fn7&quot;&gt;7&lt;/a&gt;&lt;/sup&gt;代码。这些元数据告诉Jekyll，此文件该使用什么模板，页面的标题该是什么，等等。此文件里，我指定使用default模板。模板文件都在 &lt;a href=&quot;http://github.com/mojombo/tpw/tree/master/_layouts&quot;&gt;_layouts&lt;/a&gt; 文件夹里。如果你打开 &lt;a href=&quot;http://github.com/mojombo/tpw/tree/master/_layouts/default.html&quot;&gt;default.html&lt;/a&gt; 文件，将看到主页是由index.html包裹在此模板中而生成的。&lt;/p&gt;
+&lt;p&gt;你同样将注意到这些文件里有Liquid模版引擎代码。Liquid是一种简单的，可扩展的模版语言，它令数据更容易嵌入到模版里。我希望在我的主页上显示我的文章列表。Jekyll生成一个散列表（Hash),包含关于我网站的各种数据。&lt;code&gt;site.posts&lt;/code&gt;是我所有博客文章的一个按时间由近及远顺序的列表。每篇文章，又包含几个字段，如标题（title）和时间（date）。&lt;/p&gt;
+&lt;p&gt;Jekyll解析（parsing）在_posts目录中的文件，以获取博客文章的列表。每篇文章文件标题里包括有，最终生成静态HTML文件的发布日期和略缩名（slug，出现在URL中的名字）。打开本文的源码， &lt;a href=&quot;http://github.com/mojombo/tpw/tree/master/_posts/2008-11-17-blogging-like-a-hacker.textile&quot;&gt;2008-11-17-blogging-like-a-hacker.textile&lt;/a&gt;. GitHub默认会转换textile文件，为了更好的理解，请打开文件的 &lt;a href=&quot;http://github.com/mojombo/tpw/tree/master/_posts/2008-11-17-blogging-like-a-hacker.textile?raw=true&quot;&gt;原始形式&lt;/a&gt;. 文件里我指定了使用&lt;code&gt;post&lt;/code&gt;模版。如果你打开 &lt;a href=&quot;http://github.com/mojombo/tpw/blob/03fa4247b2f4ba620661d9025c336f167aa11ba2/_layouts/post.html&quot;&gt;post.html&lt;/a&gt; 文件，会发现这里有一个嵌套模版的例子。模版里可以包含其他模版，这使你有更大的灵活性去指定页面显示。我用嵌套模版，是为了显示相关文章。&lt;/p&gt;
+&lt;p&gt;Jekyll用一种特殊的方式处理文章源文件。文件名中指定的日期用来构造生成网站的URL。比如这篇文章，最后生成的URl地址是&lt;code&gt;http://tom.preston-werner.com/2008/11/17/blogging-like-a-hacker.html&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;非下划线开头的目录中的文件，将直接复制到生成网站中的对应目录。如果一个文件不是以YAML代码段开头，Liquid解释器将略过它。二进制文件也将直接复制。&lt;/p&gt;
+&lt;p&gt;为了将你的原始网站转换到静态网页版本，只需在命令行中输入：&lt;/p&gt;
+&lt;pre class=&quot;terminal&quot;&gt;&lt;code&gt;$ jekyll /path/to/raw/site /path/to/place/generated/site&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Jekyll仍然是一个非常年轻的项目。我仅仅开发出我所需要的那些功能。我希望这个项目能慢慢成熟起来，支持更多的功能。如果你用Jekyll搭建了你的博客，请发邮件告诉我，在Jekyll未来的版本里你需要些什么功能。更好的方法是，在GitHub上克隆（fork）这个项目，然后修改（hack），加上你自己需要的功能。&lt;/p&gt;
+&lt;p&gt;我已经使用Jekyll超过1个月了。我爱它。非常有益的是，驱使我开发Jekyll的动力源自我自己博客的需要。我能在TextMate&lt;sup class=&quot;footnote&quot; id=&quot;fnr8&quot;&gt;&lt;a href=&quot;#fn8&quot;&gt;8&lt;/a&gt;&lt;/sup&gt;里编辑我的文章，它支持自动拼写检查。我能随时修改CSS和页面模版。所有东西备份在GitHub上。写这篇文章时，我感觉很轻松。系统简单到我能控制整个的转换过程。我脑海和我博客间的距离缩短了。我想它会让我成为一个更好的博客作者。&lt;/p&gt;
+&lt;h2&gt;Footnotes：&lt;/h2&gt;
+&lt;p class=&quot;footnote&quot; id=&quot;fn1&quot;&gt;&lt;a href=&quot;#fnr1&quot;&gt;&lt;sup&gt;1&lt;/sup&gt;&lt;/a&gt; &lt;a href=&quot;http://en.wikipedia.org/wiki/Livejournal&quot;&gt;LiveJournal&lt;/a&gt; 一个提供博客服务的网站，中国长城之外。&lt;/p&gt;
+&lt;p class=&quot;footnote&quot; id=&quot;fn2&quot;&gt;&lt;a href=&quot;#fnr2&quot;&gt;&lt;sup&gt;2&lt;/sup&gt;&lt;/a&gt; &lt;a href=&quot;http://posterous.com/&quot;&gt;http://posterous.com/&lt;/a&gt; 一个用Email发布博客的网站。&lt;/p&gt;
+&lt;p class=&quot;footnote&quot; id=&quot;fn3&quot;&gt;&lt;a href=&quot;#fnr3&quot;&gt;&lt;sup&gt;3&lt;/sup&gt;&lt;/a&gt; &lt;a href=&quot;http://en.wikipedia.org/wiki/Github&quot;&gt;GitHub&lt;/a&gt; 一个提供Git托管服务的网站。本文作者是github创始人之一。&lt;/p&gt;
+&lt;p class=&quot;footnote&quot; id=&quot;fn4&quot;&gt;&lt;a href=&quot;#fnr4&quot;&gt;&lt;sup&gt;4&lt;/sup&gt;&lt;/a&gt; &lt;a href=&quot;http://en.wikipedia.org/wiki/Git_(software)&quot;&gt;Git&lt;/a&gt; Linus Torvalds写的分布式版本管理系统，用与管理Linux的开发。&lt;/p&gt;
+&lt;p class=&quot;footnote&quot; id=&quot;fn5&quot;&gt;&lt;a href=&quot;#fnr5&quot;&gt;&lt;sup&gt;5&lt;/sup&gt;&lt;/a&gt; &lt;a href=&quot;http://en.wikipedia.org/wiki/Textile_(markup_language)&quot;&gt;Textile&lt;/a&gt; 一种语法比HTML简单的标记语言，最后转换成HTML。&lt;/p&gt;
+&lt;p class=&quot;footnote&quot; id=&quot;fn6&quot;&gt;&lt;a href=&quot;#fnr6&quot;&gt;&lt;sup&gt;6&lt;/sup&gt;&lt;/a&gt; &lt;a href=&quot;http://www.liquidmarkup.org/&quot;&gt;Liquid&lt;/a&gt; Ruby的一个模版引擎库（ &lt;a href=&quot;http://en.wikipedia.org/wiki/Template_engine_(web)&quot;&gt;Template Engine&lt;/a&gt; ）。&lt;/p&gt;
+&lt;p class=&quot;footnote&quot; id=&quot;fn7&quot;&gt;&lt;a href=&quot;#fnr7&quot;&gt;&lt;sup&gt;7&lt;/sup&gt;&lt;/a&gt; &lt;a href=&quot;http://en.wikipedia.org/wiki/Yaml&quot;&gt;&lt;span class=&quot;caps&quot;&gt;YAML&lt;/span&gt;&lt;/a&gt; 是一个几乎所有编程语言都支持的易读的数据序列化（ &lt;a href=&quot;http://en.wikipedia.org/wiki/Serialization&quot;&gt;Serialization&lt;/a&gt; )标准。&lt;/p&gt;
+&lt;p class=&quot;footnote&quot; id=&quot;fn8&quot;&gt;&lt;a href=&quot;#fnr8&quot;&gt;&lt;sup&gt;8&lt;/sup&gt;&lt;/a&gt; &lt;a href=&quot;http://en.wikipedia.org/wiki/Textmate&quot;&gt;TextMate&lt;/a&gt; Mac OS下一个文本编辑器。Ruby开发者们最爱，快捷键类似Emacs。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;--EOF--&lt;/code&gt;&lt;/p&gt;</content>
+ </entry>
+ 
+
+</feed>

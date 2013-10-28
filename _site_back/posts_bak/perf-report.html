@@ -1,0 +1,143 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>Oracle's performance-tuning reports</title>
+    <meta name="author" content="kyle x lau" />
+    <link href="http://kyle.xlau.org/atom.xml" rel="alternate" title="liyichao's Weblog" type="application/atom+xml" />
+
+    <!-- Homepage CSS -->
+    <link rel="stylesheet" href="/assets/css/bootstrap.min.css" type="text/css" media="screen" charset="utf-8" />
+    <link rel="stylesheet" href="/assets/css/bootstrap-responsive.css" type="text/css" media="screen" charset="utf-8" />
+    <link rel="stylesheet" href="/assets/css/app.css" type="text/css" media="screen" charset="utf-8" />
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+	<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+
+    <!-- syntax highlighting CSS -->
+    <link rel="stylesheet" href="/assets/css/syntax.css" type="text/css" media="screen" charset="utf-8" />
+
+    <link rel="shortcut icon" href="assets/ico/favicon.ico">
+      <!-- Fonts -->
+      <link href='http://fonts.googleapis.com/css?family=Yanone+Kaffeesatz' rel='stylesheet' type='text/css'>
+      </head>
+
+      <body>
+	<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+      <a class="brand" href="/">Kylexlau's Weblog</a>
+	<ul class="nav">
+	  <li class="active"><a href="/">Home</a></li>
+	  <li ><a href="/archive.html">Archive</a></li>
+	  <li ><a href="/categories.html">Categories</a></li>
+	  <li ><a href="/sitemap.html">Sitemap</a></li>
+	  <li ><a href="/about.html">About</a></li>
+	</ul>
+	<ul class="nav pull-right">
+	  <li ><a href="/atom.xml">Subscribe</a></li>
+	</ul>
+    </div>
+  </div>
+</div>
+
+	<div class="container">
+	  <div id="post">
+<h1>
+  <a href="/posts/perf-report.html">Oracle's performance-tuning reports</a>
+</h1>
+<div class="authoring">
+  September 18, 2011
+</div>
+
+<h2>Introduction</h2>
+<ul>
+	<li>Automatic Workload Repository (<span class="caps">AWR</span>)</li>
+	<li>Automatic Database Diagnostic Monitor (<span class="caps">ADDM</span>)</li>
+	<li>Active Session History (<span class="caps">ASH</span>)</li>
+	<li>Statspack</li>
+</ul>
+<p><span class="caps">AWR</span>, <span class="caps">ADDM</span> and <span class="caps">ASH</span> need additional license.  Statspack is free.</p>
+<p>You can also run <span class="caps">AWR</span>, <span class="caps">ADDM</span>, and <span class="caps">ASH</span> reports from Enterprise Manager, which you may find more intuitive than manually running the scripts from SQL*Plus.</p>
+<p>Oracle maintains a massive collection of dynamic performance views that track and accumulate metrics of database performance.  For Oracle 11g, there&#8217;re over 400 dynamic performance views:</p>
+<pre><code>SQL&gt; select count(*) from dictionary where table_name like 'V$%';</code></pre>
+<p>The Oracle performance utilities rely on periodic snapshots gathered from these internal performance views.  Two of the most useful views with regard to performance statistics are the V$<span class="caps">SYSSTAT</span> and V$<span class="caps">SESSTAT</span> view.</p>
+<h2>Using <span class="caps">AWR</span></h2>
+<p>Oracle will automatically take a snapshot of your database once an hour and populate the underlying <span class="caps">AWR</span> tables that store the statistics.  By default, seven days of statistics are retained.</p>
+<pre><code>SQL&gt; @?/rdbms/admin/awrrpt</code></pre>
+<p>Generate an <span class="caps">AWR</span> report for a specific <span class="caps">SQL</span> statement:</p>
+<pre><code>SQL&gt; @?/rdbms/admin/awrsqrpt</code></pre>
+<h2>Using <span class="caps">ADDM</span></h2>
+<p><span class="caps">ADDM</span> report provides useful suggestions on which <span class="caps">SQL</span> statements are candidates for tuning.  It analyzes data in the <span class="caps">AWR</span> tables to identify potential bottlenecks and high resource-consuming <span class="caps">SQL</span> queries.</p>
+<pre><code>SQL&gt; @?/rdbms/admin/addmrpt</code></pre>
+<h2>Using <span class="caps">ASH</span></h2>
+<p><span class="caps">ASH</span> report allows you to focus on short-lived <span class="caps">SQL</span> statements that have been recently run and may have only executed for a brief amount of time.</p>
+<p>The <span class="caps">AWR</span> and <span class="caps">ADDM</span> output shows top-consuming <span class="caps">SQL</span> in terms of total database time.  If the <span class="caps">SQL</span> performance problem is transient and short-lived, use <span class="caps">ASH</span>.</p>
+<pre><code>SQL&gt; @?/rdbms/admin/ashrpt</code></pre>
+<h2>Using Statspack</h2>
+<p>Help you identify poorly performing <span class="caps">SQL</span> statements.</p>
+<p>Install Statspack, it creates a <span class="caps">PERFSTAT</span> user that owns the Statspack repository.</p>
+<pre><code>SQL&gt; @?/rdbms/admin/spcreate</code></pre>
+<p>Enable the automatic gathering of Statspack statistics:</p>
+<pre><code>SQL&gt; @?/rdbms/admin/spauto</code></pre>
+<p>After some snapshots have been gathered, you can run the following script as the <span class="caps">PERFSTAT</span> user to create a Statspack report:</p>
+<pre><code>SQL&gt; @?/rdbms/admin/spreport</code></pre>
+<p>The Statspack historical performance statistical data is stored in the <span class="caps">STAT</span>$SQL_SUMMARY table and the <span class="caps">STATS</span>$<span class="caps">SNAPSHOT</span> table contains a record for each Statspack snapshot.</p>
+</div>
+
+<div id="related">
+  <h2>Random Posts</h2>
+  <ul class="posts">
+    
+      <li><span>08 Oct 2013</span> &raquo; <a href="/posts/first-post.html">stat</a></li>
+    
+      <li><span>26 Aug 2013</span> &raquo; <a href="/posts/aix-large-pages.html">Oracle 数据库在 AIX 平台上启用大内存页</a></li>
+    
+      <li><span>05 Jul 2012</span> &raquo; <a href="/posts/oracle-data-guard-part2.html">Oracle 11g Data Guard 物理备库快速配置指南（下）</a></li>
+    
+      <li><span>26 Jun 2012</span> &raquo; <a href="/posts/oracle-data-guard-part1.html">Oracle 11g Data Guard 物理备库快速配置指南（上）</a></li>
+    
+      <li><span>13 Apr 2012</span> &raquo; <a href="/posts/linux-sar.html">Linux 下使用 Sar 简介</a></li>
+    
+  </ul>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_developer = 1;
+    var disqus_shortname = 'xlau';
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+
+	  <div id="footer">
+  Powered by <a href="https://github.com/mojombo/jekyll">Jekyll</a> and <a href="http://twitter.github.com/bootstrap/">Bootstrap</a>.  Last updated at 2013-10-08 14:11:33 +0800.
+</div>
+
+	</div>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+	<script src="/assets/js/app.js"></script>
+	<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-4770949-2']);
+  _gaq.push(['_setDomainName', 'xlau.org']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+      </body>
+</html>

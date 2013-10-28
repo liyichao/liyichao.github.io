@@ -1,0 +1,165 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>PL/SQL 代码规范</title>
+    <meta name="author" content="kyle x lau" />
+    <link href="http://kyle.xlau.org/atom.xml" rel="alternate" title="liyichao's Weblog" type="application/atom+xml" />
+
+    <!-- Homepage CSS -->
+    <link rel="stylesheet" href="/assets/css/bootstrap.min.css" type="text/css" media="screen" charset="utf-8" />
+    <link rel="stylesheet" href="/assets/css/bootstrap-responsive.css" type="text/css" media="screen" charset="utf-8" />
+    <link rel="stylesheet" href="/assets/css/app.css" type="text/css" media="screen" charset="utf-8" />
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+	<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+
+    <!-- syntax highlighting CSS -->
+    <link rel="stylesheet" href="/assets/css/syntax.css" type="text/css" media="screen" charset="utf-8" />
+
+    <link rel="shortcut icon" href="assets/ico/favicon.ico">
+      <!-- Fonts -->
+      <link href='http://fonts.googleapis.com/css?family=Yanone+Kaffeesatz' rel='stylesheet' type='text/css'>
+      </head>
+
+      <body>
+	<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+      <a class="brand" href="/">Kylexlau's Weblog</a>
+	<ul class="nav">
+	  <li class="active"><a href="/">Home</a></li>
+	  <li ><a href="/archive.html">Archive</a></li>
+	  <li ><a href="/categories.html">Categories</a></li>
+	  <li ><a href="/sitemap.html">Sitemap</a></li>
+	  <li ><a href="/about.html">About</a></li>
+	</ul>
+	<ul class="nav pull-right">
+	  <li ><a href="/atom.xml">Subscribe</a></li>
+	</ul>
+    </div>
+  </div>
+</div>
+
+	<div class="container">
+	  <div id="post">
+<h1>
+  <a href="/posts/plsql-style.html">PL/SQL 代码规范</a>
+</h1>
+<div class="authoring">
+  March 26, 2012
+</div>
+
+<p>来自 <em>Oracle PL/SQL by Examples 4th Edition</em> 附录一中的 PL/SQL 代码格式指南。</p>
+
+<h2>大小写</h2>
+
+<ul>
+<li>关键字(BEGIN,END)，数据类型(NUMBER VARCHAR2)，内置函数(TO_CHAR,SUBSTR)，用户自定义存储过程、函数和包，这些对象名称使用大写。</li>
+<li>变量名、表名、列名，使用小写。</li>
+</ul>
+
+
+<h2>空格</h2>
+
+<ul>
+<li>等于号和比较操作符两边加空格。</li>
+<li>结构关键字（BEGIN and END, IF and END, LOOP and END LOOP)左边对齐。</li>
+<li>结构内的语句缩进3个空格。</li>
+<li>代码段之间留空行。</li>
+</ul>
+
+
+<h2>命名规范</h2>
+
+<p>为防止名字冲突，最好采用以下命名规范：</p>
+
+<ul>
+<li>变量：<code>v_variable_name</code></li>
+<li>常量：<code>con_constant_name</code></li>
+<li>参数：<code>i_in_parameter_name</code>, <code>o_out_parameter_name</code> and <code>io_in_out_parameter_name</code>.</li>
+<li>游标：<code>c_cursor_name</code> or <code>name_cur</code></li>
+<li>引用游标：<code>rc_reference_cursor_name</code></li>
+<li>记录：<code>r_record_name</code> or <code>name_rec</code></li>
+<li>遍历游标：<code>FOR r_stud IN c_stud LOOP</code> or <code>FOR stud_rec IN stud_cur LOOP</code></li>
+<li>用户定义类型：<code>type_name</code> or <code>name_type</code></li>
+<li>PL/SQL表（类似数组）：<code>t_table</code> or <code>name_tab</code></li>
+<li>用户定义异常：<code>e_exception_name</code></li>
+</ul>
+
+
+<p>包、存储过程和函数的命名实例：</p>
+
+<ul>
+<li>描述包中存储过程和函数的作用：<code>student_admin</code></li>
+<li>描述存储过程所执行的操作：<code>remove_student</code></li>
+<li>描述函数返回变量：<code>student_enroll_count</code></li>
+</ul>
+
+
+<h2>注释</h2>
+
+<p>使用<code>--</code>，不要用<code>/*...*/</code>。</p>
+
+<h2>其他建议</h2>
+
+<p>为代码段写注释，解释此段代码的目的，并列出一些基本信息，比如作者名、创建时间、修改时间、版本和版本描述。</p>
+
+</div>
+
+<div id="related">
+  <h2>Random Posts</h2>
+  <ul class="posts">
+    
+      <li><span>08 Oct 2013</span> &raquo; <a href="/posts/first-post.html">stat</a></li>
+    
+      <li><span>26 Aug 2013</span> &raquo; <a href="/posts/aix-large-pages.html">Oracle 数据库在 AIX 平台上启用大内存页</a></li>
+    
+      <li><span>05 Jul 2012</span> &raquo; <a href="/posts/oracle-data-guard-part2.html">Oracle 11g Data Guard 物理备库快速配置指南（下）</a></li>
+    
+      <li><span>26 Jun 2012</span> &raquo; <a href="/posts/oracle-data-guard-part1.html">Oracle 11g Data Guard 物理备库快速配置指南（上）</a></li>
+    
+      <li><span>13 Apr 2012</span> &raquo; <a href="/posts/linux-sar.html">Linux 下使用 Sar 简介</a></li>
+    
+  </ul>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_developer = 1;
+    var disqus_shortname = 'xlau';
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+
+	  <div id="footer">
+  Powered by <a href="https://github.com/mojombo/jekyll">Jekyll</a> and <a href="http://twitter.github.com/bootstrap/">Bootstrap</a>.  Last updated at 2013-10-08 14:11:33 +0800.
+</div>
+
+	</div>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+	<script src="/assets/js/app.js"></script>
+	<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-4770949-2']);
+  _gaq.push(['_setDomainName', 'xlau.org']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+      </body>
+</html>
