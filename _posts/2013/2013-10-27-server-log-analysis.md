@@ -18,7 +18,7 @@ tags: []
 	                         :"8.8.9.10"=>{:"/topic/456"=>1}}
      
 
-每24个文件选出符合当天要求的用户`day_candidate`，维护备选用户名列表`candidate_user`和备选路径列表`candidate_url`。备选用户很好维护，但是备选路径不好维护，因为它依赖于最终的用户列表。假设用户名列表只保存至目前为止符合要求的用户名，路径列表只保存至目前为止符合要求的路径列表，考虑`candidate_user`的用户i不在`day_candidate`里面，这时候i就该从`candidate_user`中删除，那么`candidate_url`呢，有些url是被i访问的，没i的话有些url就不符合以前的日子的要求了。所以`candidate_url`必须保存以前所有天访问它的用户，当然，只要保存在`candidate_user`里的用户。如下
+每24个文件选出符合当天要求的用户`day_candidate`，维护备选用户名列表`candidate_user`和备选路径列表`candidate_url`。备选用户很好维护，但是备选路径不好维护，因为它依赖于最终的用户列表。假设用户名列表只保存至目前为止符合要求的用户名，路径列表只保存至目前为止符合要求的路径列表，考虑`candidate_user`的用户i不在`day_candidate`里面，这时候i就该从`candidate_user`中删除，那么`candidate_url`呢，有些url是被i访问的，没i的话有些url就不符合以前的日子的要求了。所以`candidate_url`必须保存以前所有天访问它的用户，当然，只要保存在`candidate_user`里的用户。`candidate_url`结构如下
 
     {:"/topic/100" => [Set[:"8.8.9.9", :"8.8.9.10"], Set[:"8.8.9.9", :"8.8.9.12"], ...]
      :"/topic/101" => [Set[:"8.8.9.9", :"8.8.9.10"], Set[:"8.8.9.9", :"8.8.9.12"], ...], ...}
