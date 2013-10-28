@@ -36,6 +36,7 @@ tags: []
         end
 
 最后，对`candidate_url`进行进一步删选，因为有些url不符合当天的要求，对于符合要求的url，添加当天的访问用户列表`today_users[url]`到`candidate_url[url]`中去。
+    
     candidate_url.each do |url, users|
         if today_users[url].size < 2
             candidate_url.delete url
