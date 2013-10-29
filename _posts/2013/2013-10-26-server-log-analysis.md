@@ -6,8 +6,6 @@ tags: []
 ---
 {% include JB/setup %}
 
->追逐自己喜欢的变化，让心灵在纷繁的世界中有一片属于自己的桃花源。
-
 用Ruby做。这样调用`ruby analysis.rb *.log`，在程序里遍历文件名数组`ARGV`，对每个文件，用以下正则表达式选到需要的行
 
     %r{\s+ GET \s+ (/topic/\d\d\d) \s+ \((.*)\) \s+}x
