@@ -57,6 +57,7 @@ worked_time`，还不如把`id`和`worked_time`都整到一个结构体里面去
 - 1：worker back。客服忙变闲。客服要求返回或者客服表示通话完毕。
 - 2：worker send。客服发送消息。
 - 3：client send。客户发送消息。
+
 还有两种没有消息的事件。
 
 - 客户断开连接，这个由从客户套接字`Read`到0检测出。系统调用`worker_back`把服务它的客服放回空闲列表。
