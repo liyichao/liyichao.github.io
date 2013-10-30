@@ -29,11 +29,13 @@ worked_time`，还不如把`id`和`worked_time`都整到一个结构体里面去
 
 - server, worker_cli, user_cli。两个客户端worker_cli，user_cli分别接收客服和客户的请求，并发送给服务器，服务器处理请求，可能需要调用下层的功能，并回复结果给客户端，客户端显示结果。
 - PhoneAnswer。为上层提供 
+
     -- `int worker_leave(int workerid)`。处理客服离开请求。
     -- `void worker_back(int workerid)`。处理客服回来请求。
     -- `int answer_call()`。处理客户的打电话请求。
 
 - PriorityQueue。为上层提供
+
     -- `int front()`。从队首弹出一个`Worker*`，并把`id`返回给调用者。用于分配客服的请求。
     -- `void remove(int workerid)`。移除指定的客服。用于`worker_leave`。
     -- `void insert(Worker *)`。把某客服插入到队列中。表示该客服重新空闲。
