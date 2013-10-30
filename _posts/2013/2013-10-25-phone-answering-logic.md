@@ -25,9 +25,7 @@ worked_time`，还不如把`id`和`worked_time`都整到一个结构体里面去
     } Worker;
 
 
-类名就叫`PhoneAnswer`吧，为减小编译依存性，采用`Pimpl Idiom`，这样`PhoneAnswer`就只有一个`PhoneAnswerImpl`指针了，所有实现都delegate给类
-`PhoneAnswerImpl`，只要`PhoneAnswerImpl`接口不变，`PhoneAnswer`不需要重新编译，用`PhoneAnswer`的用户也不需要重新编译，只要链接新的`PhoneAnswerImpl`就行，如果编译成动态库，链接都省了。保存空闲客服列表的优先队列可能有多种实现，所以把优先队列又从`PhoneAnswerImpl`里分出来，单
-独成为`PriorityQueue`类。于是，程序的整体结构就有3层。
+类名就叫`PhoneAnswer`吧，为减小编译依存性，采用`Pimpl Idiom`，这样`PhoneAnswer`就只有一个`PhoneAnswerImpl`指针了，所有实现都delegate给类`PhoneAnswerImpl`，只要`PhoneAnswerImpl`接口不变，`PhoneAnswer`不需要重新编译，用`PhoneAnswer`的用户也不需要重新编译，只要链接新的`PhoneAnswerImpl`就行，如果编译成动态库，链接都省了。保存空闲客服列表的优先队列可能有多种实现，所以把优先队列又从`PhoneAnswerImpl`里分出来，单独成为`PriorityQueue`类。于是，程序的整体结构就有3层。
 
 - server, worker_cli, user_cli。两个客户端worker_cli，user_cli分别接收客服和客户的请求，并发送给服务器，服务器处理请求，可能需要调用下层的功能，并回复结果给客户端，客户端显示结果。
 - PhoneAnswer。为上层提供 
