@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "stat"
-category: 
+category:
 tags: []
 ---
 {% include JB/setup %}
@@ -22,6 +22,6 @@ APUE上判断文件类型是
       case S_IFREG: nreg++; break;
       case S_IFLNK: nslink++; break;
     }
-    
+
 用`stat`在符号链接文件上，一直想，为什么判断不出是符号链接，原来`stat`是跟随符号链接的，要用`lstat`才好。
 
