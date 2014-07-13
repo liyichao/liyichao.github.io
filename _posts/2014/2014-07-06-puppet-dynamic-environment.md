@@ -19,7 +19,7 @@ puppet environment是独立的puppet环境，每个环境有自己的modules和m
 
 ## puppet dynamic environment
 
-puppet dynamic environment是指以下配置：
+puppet静态环境是指以下配置：
 
     [main]
       server = puppet.example.com
