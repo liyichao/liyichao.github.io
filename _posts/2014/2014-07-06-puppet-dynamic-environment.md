@@ -63,4 +63,4 @@ puppet v3.5.0以后，配置更为简单：
 
 利用[post-receive hook](http://puppetlabs.com/blog/git-workflow-and-puppet-environments)。工作流程是开发者git clone puppet仓库，新建分支，如my_feature，然后git push。有了那个post-receive hook，远程仓库收到push请求，会ssh到puppet master所在的机器，在$confdir/environments/目录下新建目录my_feature，然后把my_feature分支里的内容clone过来。
 
-使用gitlab的Webhooks是一样的，只是webhooks的接口是url post请求，所以需要写个小服务器。
+使用gitlab的Webhooks自动部署实质也是post-receive，只是webhooks的接口是url post请求，所以需要写个小服务器。
