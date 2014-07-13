@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "puppet "
+title: "puppet usage"
 category: 
 tags: []
 ---
