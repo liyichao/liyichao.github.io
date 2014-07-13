@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "puppet 配置重构"
+title: "puppet "
 category: 
 tags: []
 ---

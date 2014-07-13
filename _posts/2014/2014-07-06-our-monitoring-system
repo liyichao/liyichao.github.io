@@ -1,14 +1,12 @@
 ---
 layout: post
-title: "design monitoring system"
+title: "our monitoring system"
 category: 
 tags: []
 ---
 {% include JB/setup %}
 
-##监控系统现状
-
-###架构
+##架构
 
 * 每台机器上部署:
   * [statsd](https://github.com/armon/statsite)
@@ -32,9 +30,8 @@ tags: []
 
 * 其他杂项：应用程序直接往graphite打数据而不经过statsd
 
-###现状
+##代码管理
 
-* collectd和nagios nrpe重复监控了cpu load等
 * 相关仓库：
 	* zhihu_puppet：nrpe模块和collectd模块，管理所有被监控机器的设置
 		* nrpe模块：
@@ -42,6 +39,7 @@ tags: []
 			* nrpe.cfg：供监控主机nrpe插件调用的command定义
 	* zhihu_config：该项目nagios目录管理了监控主机的设置，还保存本应该在nagiosplugins中的插件脚本，如plugins/check_zookeeper.py
 	* nagiosplugins：监控主机上的nagios插件脚本
+	* statusplugin：部署在小脚本机器上，从sink，kids订阅，往graphite打数据
 	
 * nagios加报警流程：
 	* nrpe：
@@ -50,18 +48,3 @@ tags: []
 	* nagios插件：
 		1. 在zhihu_config/commands加入命令定义
 		2. 在nagiosplugins加入自定义插件脚本，登录nagios主机存放nagiosplugins仓库的目录/data/apps/nagiosplugins，运行git pull，./bin/buildout
-
-* zhihu_config/nagios中的遗留代码：notify-service-by-gtalk，contacts/api.cfg里有fangjingyuan，contacts/app.cfg里有rio，
- 
-##监控系统设计
-
-####Nagios
-
-把所有报警系统的设置，包括nagios，collectd，nagios nrpe，nagios plugins，都放到puppet，可以叫monitor模块，具体见puppet小节。
- 
-####puppet
-
-拟对现在puppet配置作以下修改：
-
-* 报警模块隔离出来，设为单独仓库，并通过puppetfile导进整体的puppet配置
-* 使用[puppet动态环境](http://puppetlabs.com/blog/git-workflow-and-puppet-environments)。目前的静态环境production，testing，office，不方便配置的测试
