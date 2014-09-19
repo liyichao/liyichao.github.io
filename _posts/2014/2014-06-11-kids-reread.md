@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "kids distribute"
+title: "kids reread"
 category: 
 tags: []
 ---
@@ -13,7 +13,8 @@ store是有topic的，如果message的topic和store不匹配，message会被抛�
 bufferstore并不是指把消息存在内存里，而是一个缓冲（采用deque实现），转发到primary或secondary。
 
 filesystem.h里的File类提供了什么功能？有必要么？
-###风格
+
+##风格
 
 * 数据成员名字后加下划线，下划线分隔：`buffer_type_`
 * 类名大写开头，大写分隔：`class Store`
@@ -28,5 +29,3 @@ filesystem.h里的File类提供了什么功能？有必要么？
   			}
   			return false;
 		}
-
-* 

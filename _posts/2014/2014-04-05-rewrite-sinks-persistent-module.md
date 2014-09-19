@@ -10,8 +10,8 @@ sink也是个消息订阅与发送队列，与kids的区别就是每条消息，
 
 文档说它runs very fast。可是不管多fast，还是受限于底层hash或B+的实现。对于sink来说，并不需要根据key去随机访问value。就说session功能，也是自某个时间点开始，顺序的访问消息队列。
 
-这种场合，直接用一个append-only-file够了。当时只是一味的遵从Unix的教条，存成文本，不存二进制。其实也是可以用`fread`和`fwrite`。消息格式是：
+这种场合，直接用一个append-only-file够了。消息格式是：
 
 >message_size SEP topic_size SEP topic SEP data\n
 
-消息的序列化方式是值得考虑的。后来见识到protobuf，其实这种事情用protobuf做也是可以的。用protobuf进行序列化，同时也可以做为和客户通信的格式，客户那边decode一下就好了。
+我是直接用write成文本的，存成二进制可以用`fread`和`fwrite`，用fwrite的话直接打开存储文件就看不见message_size，不好调试。没用标准IO确是一个失误。
