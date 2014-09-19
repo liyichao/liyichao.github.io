@@ -34,7 +34,6 @@ tags: []
 
 ###现状
 
-* collectd和nagios nrpe重复监控了cpu load等
 * 相关仓库：
 	* zhihu_puppet：nrpe模块和collectd模块，管理所有被监控机器的设置
 		* nrpe模块：
@@ -42,7 +41,12 @@ tags: []
 			* nrpe.cfg：供监控主机nrpe插件调用的command定义
 	* zhihu_config：该项目nagios目录管理了监控主机的设置，还保存本应该在nagiosplugins中的插件脚本，如plugins/check_zookeeper.py
 	* nagiosplugins：监控主机上的nagios插件脚本
-	
+
+* 相关机器：
+	* zindex：statusplugins仓库的代码的部署地，用于从sink，kids订阅数据，打到graphite
+	* status：graphite主机
+	* nagios：nagios监控主机
+		
 * nagios加报警流程：
 	* nrpe：
 		1. nagios主机：在zhihu_config定义新command和新service，运行zhihu_config/deploy.py
@@ -51,9 +55,11 @@ tags: []
 		1. 在zhihu_config/commands加入命令定义
 		2. 在nagiosplugins加入自定义插件脚本，登录nagios主机存放nagiosplugins仓库的目录/data/apps/nagiosplugins，运行git pull，./bin/buildout
 
-* zhihu_config/nagios中的遗留代码：notify-service-by-gtalk，contacts/api.cfg里有fangjingyuan，contacts/app.cfg里有rio，
+###监控的数据分类
+
+
  
-##监控系统设计
+##要做的事
 
 ####Nagios
 
