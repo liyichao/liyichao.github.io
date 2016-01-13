@@ -46,6 +46,7 @@ CAT 监控系统将每次 URL、Service 的请求内部执行情况都封装为�
 +  **Trace**     用于记录基本的trace信息，类似于log4j的info信息，这些信息仅用于查看一些相关信息
 
 业务完成埋点后，会产生 CAT 的原始监控信息，即 Logview。
+
 ![image](/assets/img/cat/text_view.jpeg)
 
 Transaction 和 Event 都是两级分类。Transaction 可以嵌套，Event 就是单个节点，不可嵌套，Trasaction 和 Event 都可以关联 Key-Value，Transaction 有成功和失败状态和响应时间。它还有另一种展现形式，可以明显看出整个请求耗时在哪。
@@ -68,7 +69,9 @@ Transaction 和 Event 都是两级分类。Transaction 可以嵌套，Event 就�
 
 报错大盘：所有应用的 topN 的报错大盘，下图是一个出现故障的图。应用的单位是一个可部署的项目。Transaction **应该**有属性表明它是什么应用，这样就可以把一个应用的报错聚合起来。图中显示的是每分钟的报错排行，比 sentry 更适合于故障时查看什么应用出了问题。每个项**应该**可点击，进入报错的 Transaction，查询具体原因。![image](/assets/img/cat/报错大盘.jpeg)
 
-数据库大盘：![image](/assets/img/cat/数据库大盘.jpeg)
+![image](/assets/img/cat/数据库大盘.jpeg)
+
+数据库大盘：
 
   * 实时知道数据库访问情况的大盘。如何确定存在问题，是根据实时的数据再加一些配置的访问规则。
   * 这里不要用 DB 服务端性能采集的数据（比如io，load，qps等），要用应用程序访问这个 database 得出的响应时间、错误、访问量的数据，这里称之为端到端的数据。
@@ -77,7 +80,9 @@ Transaction 和 Event 都是两级分类。Transaction 可以嵌套，Event 就�
   * **应该**把服务端的指标和信息也放到一起展示
   * **应该** 是按库聚合的展示。
 
-网络大盘：这里采集了核心接入层网络交换机的一些信息，将一些状态定制到监控大盘上，主要的采集指标包括：进入口流量、丢包、错包等。![image](/assets/img/cat/网络大盘.jpeg)
+网络大盘：这里采集了核心接入层网络交换机的一些信息，将一些状态定制到监控大盘上，主要的采集指标包括：进入口流量、丢包、错包等。
+
+![image](/assets/img/cat/网络大盘.jpeg)
 
 缓存大盘：与数据库大盘类似
 
@@ -92,11 +97,14 @@ Transaction 和 Event 都是两级分类。Transaction 可以嵌套，Event 就�
 Logview 太多，所以有基于 Logview 的报表，这些报表反映了作者对监控的理解，是 CAT 的亮点。
 
 ## TransactionReport
+
 ![image](/assets/img/cat/transaction_report.png)
 
 这个是 TransactionReport 的一个视图，最顶层可以切换项目，一个项目定义为独立的可部署单元，报表以小时为单位（但是是实时的，最新的 Transaction 信息会在当前小时的报表中显示）。再下一行是机器列表，有一个 All 以及具体的机器，可以看所有机器，也可以看单个机器，如果某台机器出现问题，则可以很容易看到。
 
-这里展示了一个Transaction的第一层分类的视图，可以知道这段时间里面一个分类运行的次数，平均响应时间，延迟，95线以及99.9线。95line表示95%的请求的响应时间比这个值要小。![image](/assets/img/cat/transaction_second_type.png)
+![image](/assets/img/cat/transaction_second_type.png)
+
+这里展示了一个Transaction的第一层分类的视图，可以知道这段时间里面一个分类运行的次数，平均响应时间，延迟，95线以及99.9线。95line表示95%的请求的响应时间比这个值要小。
 
 TransactionReport 主要用来做性能优化。看到这个数据，应该想这样的调用量是否合理，这样的耗时有没有办法优化。点击最左边的 show，可以看到响应时间的实时图表。现在时间是 33 分 29 秒，所以图中平均响应时间只有到 32 分钟的数据。![image](/assets/img/cat/transaction_show.png)
 
@@ -107,16 +115,21 @@ TransactionReport 主要用来做性能优化。看到这个数据，应该想�
 ## ProblemReport
 
 ProblemReport 把一些有问题的 Transaction 聚合成一张报表，这些 Transaction 包括：
+
 * 程序里抛出的异常
 * URL 访问出错及慢
 * 数据库访问出错及慢
 * 缓存访问出错及慢
 * 服务访问出错及慢
+
 ![image](/assets/img/cat/problem_report.jpeg)
 
-上述报表是 tuangou-web 项目一段时间内的各种问题，点击左边的 show 可以看到错误在各 IP 的分布饼图，以及按错误数按时间的分布。![image](/assets/img/cat/problem_distribute.jpeg)
+上述报表是 tuangou-web 项目一段时间内的各种问题，点击左边的 show 可以看到错误在各 IP 的分布饼图，以及按错误数按时间的分布。
+
+![image](/assets/img/cat/problem_distribute.jpeg)
 
 点击右边 Looooooog 可以看到原始的出错 logview。这个 logview 包含这个请求的整个执行情况，包括 RPC 参数等，很像一个分布式 sentry。
+
 ![image](/assets/img/cat/problem_detail.jpeg)
 
 业务开发需要 fix ProbelmReport 中一些比较严重的问题。如 SQL 慢响应很多（通过索引或缓存），服务慢响应（如何优化），调用下游错误（推动下游服务端解决），异常等。
@@ -167,9 +180,11 @@ ProblemReport 把一些有问题的 Transaction 聚合成一张报表，这些 T
 ## Dependency
 
 趋势图：
+
 ![image](/assets/img/cat/dependency.png)
 
 拓扑图：即服务依赖拓扑图。
+
 ![image](/assets/img/cat/dependency_top.png)
 
 ## Matrix
@@ -182,6 +197,7 @@ ProblemReport 把一些有问题的 Transaction 聚合成一张报表，这些 T
 # Web
 
 URL 访问趋势：某个 URL 的请求数、成功率、成功延时。可以限定和比较日期，返回码，URL，地区，运营商。
+
 ![image](/assets/img/cat/url.png)
 
 URL 访问分布：某个 URL 的返回码，运营商，地区分布。
@@ -232,6 +248,7 @@ Crash 日志：如下图所示。
 ## 告警
 
 告警类型包含：业务告警、网络告警、系统告警、异常告警、心跳告警、第三方告警、前端告警、App 告警、Web 告警、Zabbix 告警、DB 告警、Transaction 告警，http ping 报警。当前报警无需登录可以看到：
+
 ![image](/assets/img/cat/alert.png)
 
 而报警配置需要登录才能配置。和其他 CAT 配置放一起，推测报警配置应该是由运维维护。
