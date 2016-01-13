@@ -295,6 +295,6 @@ CAT 里项目被组织成产品线。在业务大盘中显示的是一个产品�
 # 链接
 
 * [吴其敏 InfoQ 演讲](http://www.infoq.com/cn/presentations/public-comments-monitoring-platform-analyse)
-* [尤勇在高可用架构的分享](http://www.wmyouxi.com/a/56948.html)
+* [尤勇在【QCon高可用架构群】的分享](http://www.wmyouxi.com/a/56948.html)
 * [大众点评运维架构图文详解](http://mageedu.blog.51cto.com/4265610/1662875)
-* cat 依赖 maven 3.2.3，官方已没有，使用以下下载地址： https://repo1.maven.org/maven2/org/apache/maven/apache-maven/3.2.3/
+* cat 依赖 maven 3.2.3，官方已没有，使用以下[下载地址](https://repo1.maven.org/maven2/org/apache/maven/apache-maven/3.2.3/)
