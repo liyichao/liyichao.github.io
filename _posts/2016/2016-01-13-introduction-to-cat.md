@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Introduction to cat"
-category: 
+category:
 tags: []
 ---
 {% include JB/setup %}
@@ -46,7 +46,7 @@ CAT 监控系统将每次 URL、Service 的请求内部执行情况都封装为�
 +  **Trace**     用于记录基本的trace信息，类似于log4j的info信息，这些信息仅用于查看一些相关信息
 
 业务完成埋点后，会产生 CAT 的原始监控信息，即 Logview。
-![image](cat/text_view.jpeg)
+![image](img/cat/text_view.jpeg)
 
 Transaction 和 Event 都是两级分类。Transaction 可以嵌套，Event 就是单个节点，不可嵌套，Trasaction 和 Event 都可以关联 Key-Value，Transaction 有成功和失败状态和响应时间。它还有另一种展现形式，可以明显看出整个请求耗时在哪。
 
