@@ -344,6 +344,12 @@ System report。
 
 # 启发
 
+如何做应用监控？开发者想知道：一个请求挂了，到底挂哪了；一个请求慢了，到底慢在哪；为此，要追踪请求的整个过程。先对请求建模。
+
+一个请求称为 Transaction（或者叫 span），有两级分类，开始时间，持续时间，成功失败状态，还有 Key-value 对。在请求发生过程中，外部访问（SQL、RPC、Cache）都是 Transaction。内部执行中，某个时间点可以发生 Event （如异常，缓存命中），Event 有时间戳，两级分类，Key-value 对。程序还有一些状态信息，如队列长度，线程个数等，被建模为 Heartbeat。还有两个需求，程序想统计次数和函数的执行时间，可以分别建模为 Event  和 Transaction。
+
+其他：
+
 * CAT 对指标进行了管理，组织。把一个项目的指标分别放在了 Transaction/Event/Heartbeat report 里（对应 Statsd 的 Timer/Count/Gauge），并且，默认不显示趋势图，而是显示指标的当前值，这样，就可以在一个页面显示所有指标
 * 赋予 Transaction 以成功失败状态，把一个请求的 Transaction 通过 id 联系起来，这样，就能够知道一个请求失败，到底失败在哪一环上
 * 对 Transaction 计时，能知道一个请求慢，到底慢在那一环境上
