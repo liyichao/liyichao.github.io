@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "graphite can not query latest datapoint"
-category: 
+category:
 tags: []
 ---
 {% include JB/setup %}
@@ -127,7 +127,7 @@ echo "test.test 1 `date +'%s'`" |nc -q0 localhost 2003
 而 carbon-c-relay 是：
 
 ```
-104@graphite-host:2303=3      151@graphite-host:2403=4 
+104@graphite-host:2303=3      151@graphite-host:2403=4
 ```
 
 按源码的方法，计算了下 `test.test` 的 hash key，是 53260，按照 hash ring，carbon-c-relay 是在实例 2，而 lookup 应该是在实例 3，因此，是 hash ring 生成的问题。graphite hash ring 相关代码是[这里](https://github.com/graphite-project/carbon/blob/master/lib%2Fcarbon%2Fhashing.py#L24)，carbon-c-relay 是 [carbon-c-relay hash ring 生成相关的代码](https://github.com/grobian/carbon-c-relay/blob/master/consistent-hash.c#L227)，琢磨了一段时间，知道了 18 是 `('127.0.0.1', '5'):i` 的 hash （i 从 0 到 99），如果 hash 算法一样，前面的数字不一样，那一定是后面的字符串不一样，于是逐个字对比，就在那一瞬间，知道是 127.0.0.1 那一段不一样，因为部署在不同机器上，carbon-c-relay 不可能写 127.0.0.1，写的是 `graphite-host`。
@@ -135,7 +135,7 @@ echo "test.test 1 `date +'%s'`" |nc -q0 localhost 2003
 于是，修改 graphite-web local_settings.py 配置：
 
 ```
-CARBONLINK_HOSTS = ["graphite01:7102:1", "graphite01:7202:2", "graphite01:7302:3", "graphite01:7402:4", "graphite01:7502:5", "graphite01:7602:6"
+CARBONLINK_HOSTS = ["graphite-host:7102:1", "graphite-host:7202:2", "graphite-host:7302:3", "graphite-host:7402:4", "graphite-host:7502:5", "graphite-host:7602:6"
 ```
 
 上线后，再看图表，恢复正常！
