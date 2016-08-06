@@ -1,98 +1,36 @@
 ---
 layout: post
-title: "netty 4.0.19.Final"
-category: 
+title: "netty 4 源码阅读"
+category:
 tags: []
 ---
 {% include JB/setup %}
 
-`T extends Comparable< ? super T>` 指的是待比较类型必须是T的superclass。
+# Overview
 
-default作用域：本类或本包中的类能访问。
+Notes: netty 4.0.19.Final 版本 
 
-`Consumer<T>`：Represents an operation that accepts a single input argument and returns no result。
+先来看下官网的标语：
 
-`Executor`：An object that executes submitted Runnable tasks. This interface provides a way of decoupling task submission from the mechanics of how each task will be run, including details of thread use, scheduling, etc.
+>Netty is a NIO client server framework which enables quick and easy development of network applications such as protocol servers and clients. It greatly simplifies and streamlines network programming such as TCP and UDP socket server.
 
-`ExecutorService`：An Executor that provides methods to manage termination and methods that can produce a Future for tracking progress of one or more asynchronous tasks.
-包含方法：`shutdown`, `shutdownNow`, `submit`, `invokeAny`, `invokeAll`。
+我们来理解下。看过 [kids](https://github.com/zhihu/kids) 或 redis、或 nginx 代码的人就知道，要写一个网络服务器，特别是 TCP server，是很繁琐的。需要实现线程模型，需要实现自己的协议，我们多想，像写 HTTP server 一样，写一个 TCP server 时，只需要写一个 handler，一切就完成了，Netty 就是这么一个让编写 TCP Server 更简单的一个网络框架。
 
-`Future<V>`：A Future represents the result of an asynchronous computation. Methods are provided to check if the computation is complete, to wait for its completion, and to retrieve the result of the computation.
+这篇文章会从整体上对 Netty 进行讲解，而不会涉及，例如 Zero Copy Buffer 是怎么实现的。
 
-NIO, new I/O：
+# 基本概念
 
-* Buffers for data of primitive types
-* Character set encoders and decoders
-* A pattern-matching facility based on Perl-style regular expressions
-* Channels, a new primitive I/O abstraction
-* A file interface that supports locks and memory mapping of files up to Integer.MAX_VALUE bytes
-* A multiplexed, non-blocking I/O facility for writing scalable servers.
+理解一个系统，先得理解它的基本概念。
 
-`EventExecutorGroup`：The EventExecutorGroup is responsible to provide EventExecutor's to use via its `next()` method. Beside this it also is responsible to handle their live-cycle and allows to shut them down in a global fashion.
+`EventLoopGroup`：具有事件循环的 executor。一个网络服务器总是要起线程或进程去处理请求，这个 `EventLoopGroup` 就是这么一个运行的实体，类似 `EventExecutorGroup`，只是它可以注册 `Channel`，即，提供了事件循环，当 `Channel` 可读或可写时会执行回调。
 
-`EventExecutor`：包含方法：`inEventLoop(Thread thread)`.
+`Channel`：套接字的封装。`Channel` 关联了一个 `ChannelPipeline`，即当`Channel` 可读或可写时，会触发 `ChannelPipeline` 里各 `ChannelHandler` 的调用，简单来说 `ChannelPipeline` 就是 `ChannelHandler` 的链表，当 `Channel` 状态变化时，会依次调用这个链表里各 `ChannelHandler` 的对应方法。这个 `ChannelPipeline` 就是 Netty 建立的一个 pipeline 机制，所有业务逻辑，封装在 `ChannelHandler`，并加入到 `ChannelPipeline` 里，从而一个 TCP 服务器就建立起来了。
 
-`submit`比`execute`更强大，因为它返回future，future支持`cancel`，`get`等方法。
+`Future`：提供了异步编程的机制。像 Redis 那样，直接操作 ioloop，注册套接字事件，是很底层的，Future，就相当于是对异步执行的一个封装。`Future` 有 `success`，`failure`，未完成等状态，`Future` 可能在另一个线程被 `setSuccess`，在本线程可以 `await` `Future` 直到它完成。一般来说编程模式是这样的：在本线程调用一个函数，该函数是异步的，因此返回一个 `Future`，那个函数会把 `Future` 放到某个工作线程，或 `EventLoop` 里去执行，当然，本线程一般不会等待 `Future`，因为这样就不是异步了，会卡住当前线程，本线程一般会注册一个回调，当 `Future` 完成时该回调会调用，netty 支持该回调在 `EventLoop` 线程或者在工作线程执行。
 
-`DefaultPromise`： 一个异步执行的任务有以下状态：
+如果看过 [Fingale](http://twitter.github.io/finagle/guide/Futures.html)，那么应该会对它的 `Future` 印象深刻，人家的 Future 可是支持 `Map` 等操作的，真是令人咋舌。
 
-* 正在执行, `result == null || result == UNCANCELLABLE`
-* 正常完成
-* 被取消, `result instanceof CauseHolder`
-         `&& ((CauseHolder) result).cause instanceof CancellationException`
-* 执行产生异常, `result instanceof CauseHolder`
 
-非泛型类，成员函数为泛型需要在函数声明前添加<V>：
-        
-        public <V> Promise<V> newPromise() {return new DefaultPromise<V>(this);}
-        
-`DefaultPromise.await()`：是用`wait()`实现的，就是条件变量，当promise完成时，应该会调用`notifyAll()`。
+# 其他
 
-`sync()`会把任务执行抛出的异常重新抛出，`await()`不会。
-
-一个类可以使用内部类的private成员函数。
-
-`Channel`，`ChannelPipeline`，`ChannelHandler`，`ChannelHandlerContext`.
-
-* Inbound event propagation methods（这些方法会在handler里调用，handler会有一个`ChannelHandlerContext`类型的参数）
-  * `ChannelHandlerContext.fireChannelRegistered()`
-  * `fireChannelActive()`
-  * `fireChannelRead(Object)`
-  * `fireChannelReadComplete()`干嘛用的：在`AbstractNioByteChannel.read`里，read是在一个循环里调用的，紧接着这个循环就是调用fireChannelReadComplete，表示在这次事件中，从channel读的结束
-  * `fireExceptionCaught(Throwable)`
-  * `fireUserEventTriggered(Object)`
-  * `fireChannelWritabilityChanged()`
-  * `fireChannelInactive()`
-  * `fireChannelUnregistered()`
-* Outbound event propagation methods
-  * `ChannelHandlerContext.bind(SocketAddress, ChannelPromise)`当调用`Channel.bind(SocketAddress)`时产生该事件
-  * `connect(SocketAddress, SocketAddress, ChannelPromise)`当调用`Channel.connect(SocketAddress)`时立即调用，这时，connect可能还没有完成，因为netty所有操作都是异步的
-  * `write(Object, ChannelPromise)`
-  * `flush()`
-  * `read()`当`Channel.read()`调用时产生事件，想不通Outbound对这个事件有何兴趣
-  * `disconnect(ChannelPromise)`当调用`Channel.disconnect()`时产生该事件
-  * `close(ChannelPromise)`当调用`Channel.close()`时产生该事件
-  * `deregister(ChannelPromise)`当调用`Channel.deregister()`时产生该事件
-  
-为什么有了`ChannelFuture`后，还要`ChannelPromise`？可写的`ChannelFuture`有何作用？
-
-`Channel`，`ChannelInboundHandler`，`ChannelPipeline`，`ChannelHandlerContext`都有`ChannelRegistered`，`ChannelRead`等状态变化回调函数，它们之间有何关系？
-
-* pipeline里是`ChannelHandlerContext`组成的双链表，头尾是：`head`，`tail`。inbound事件从head流向tail，而outbound从tail流向head
-* pipeline里`bind`,`read`,`fireChannelRegistered`等各种事件处理函数，如果是inbound则delegate给`head`，是outbound则delegate给`tail`，由于`tail`里的handler是ChannelInboundHandler，而`head`里的handler是ChannelOutboundHandler，所以不管是inbound事件还是outbound事件，都有接盘者。而Context的`bind`等函数，总是调用下一个context里的handler，不会调用自己的handler
-而事件沿流水线流动则是在handler里调用context的相应函数，这样，通过自定义handler，决定事件是否要继续往下传
-* pipeline的`tail`的bind(属于outbound事件，所以tail里是流水线中最后一个处理工序)会调用channel.unsafe().bind
-* pipeline里的`fireChannelRegistered`会调用pipeline里`head`的fireChannelRegistered，而在这个函数里，会调用pipeline里下一个Context包含的handler的`channelRegistered`
-* pipeline里`head`的handler的`bind`,`connect`,`disconnect`,`close`,`read`,`write`,`flush`都调用channel.unsafe的相应函数。因为是outbound事件的最后一环，所以是实际执行具体操作的地方(除read外都是outbound事件)
-* channel的`bind`等所有事件处理函数都delegate到pipeline，于是事件沿着pipeline流动
-
-一个channel注册到EventLoop，它attach的是channel还是一个task？
-
-为什么write需要flush？
-
-`NioSocketChannel`里的`localAddress`等函数，仅仅是调用super.localAddress，既然这样，为什么要override它呢，直接不定义可以达到相同的效果，是因为可读性吗？因为这样，一看NioSocketChannel的定义就可以知道它支持的所有函数。不是可读性。
-
-追踪`EchoServer`启动过程，发现，在启动时，注册NioServerSocketChannel到selector是在`AbstractNioChannel.doRegister`，如下：
-        
-        selectionKey = javaChannel().register(eventLoop().selector, 0, this);
-可见，并没有监听`OP_ACCEPT`，这要等到bind之后，这时会触发`DefaultChannelPipeline.fireChannelActive`，而在这里面，会调用`channel.read()`这个read经过流水线，最终传到pipeline的`head`的handler，在这里会调用`unsafe.beginRead`，这里会加入`OP_ACCEPT`。
+理解了基本概念，感觉要讲的其他东西就基本没有了。比如，就像 [heka](https://github.com/mozilla-services/heka) 一样，Netty 会把 `ChannelInboundHandler` 的第一步叫做 `Decoder`，即，由字节转换为 message，其实就是协议解析了。
