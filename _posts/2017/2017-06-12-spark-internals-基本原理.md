@@ -1,8 +1,8 @@
 ---
 layout: post
 title: "spark internals 基本原理"
-category: 
-tags: ["spark 源码". "spark core"]
+category:
+tags: ["spark 源码", "spark core", "spark 实现"]
 ---
 {% include JB/setup %}
 
