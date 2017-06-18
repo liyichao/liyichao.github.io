@@ -47,7 +47,13 @@ bin/spark-submit --class org.apache.spark.examples.GroupByTest  --master spark:/
 
 我们提交了 spark 源码中 examples.GroupByTest 程序，然后我们会在 UI 上看到一个运行的 App，一个 Driver，点 worker 的链接还会看到运行的 Executor，接着这些顺利结束，我们的 Spark 程序也运行完毕了，那么 spark-submit 到底做了什么事情呢？
 
-这个跟 `deploy-mode` 有关，我们只看 `deploy-mode=cluster` 的情况。spark master 会启动一个 HTTP server，用于用户提交 spark 应用，spark-submit 会和 spark master 通信（要不然为什么要有 `--master` 参数），把 spark 应用运行所需要的信息传递过去，例如jar 文件，主类等等，spark master 记录下来，这时 spark-submit 执行完毕，而 spark master 会在合适时机启动主类，这个主类，就是 [GroupByTest](https://github.com/apache/spark/blob/master/examples/src/main/scala/org/apache/spark/examples/GroupByTest.scala)，也就是我们会谈到的 spark 应用的 driver。
+这个跟 `deploy-mode` 有关，我们先看 `deploy-mode=cluster` 的情况。spark master 会启动一个 HTTP server，用于用户提交 spark 应用，spark-submit 会和 spark master 通信（要不然为什么要有 `--master` 参数），把 spark 应用运行所需要的信息传递过去，例如jar 文件，主类等等，spark master 记录下来，这时 spark-submit 执行完毕，而 spark master 会在合适时机启动主类，这个主类，就是 [GroupByTest](https://github.com/apache/spark/blob/master/examples/src/main/scala/org/apache/spark/examples/GroupByTest.scala)，也就是我们会谈到的 spark 应用的 driver。
+
+如果 `deploy-mode=mesos`，我们只讨论`Coarse-Grained` 的情况。用户在部署 mesos 的时候同时需要部署 `MesosClusterDispatcher`，它会顺带启动`MesosClusterScheduler` 和 `MesosRestServer`，其中 MesosClusterScheduler 是一个 mesos scheduler，当用户 submit 时，会提交到 MesosRestServer，它负责把 driver 塞到 MesosClusterScheduler 的待启动 driver 列表。
+
+MesosClusterScheduler 只负责启动 driver，该 driver 会包含 `MesosCoarseGrainedSchedulerBackend`，（该对象也是一个 mesos scheduler）它会负责 executor 的启动。在静态分配的情况下（非 dynamic allocation 就叫静态）该对象在初始化时会通过 `spark.cores.max` 等参数知道该 driver 需要启动多少个 executor，从而在 mesos 提供资源给它时启动对应数量的 executor。而 DAG 相关的 task 所需要的资源其实就是 executor 得到的资源。
+
+综上，mesos 给资源给 `MesosClusterScheduler` 用于启动 driver，给资源给 `MesosCoarseGrainedSchedulerBackend` 用于启动 executor，executor 用自己的资源来跑 task。
 
 ### driver
 
@@ -97,8 +103,12 @@ driver 是用户定义的，而 executor 则是标准的，与应用无关的程
 
 那么什么是 Job 呢？一个 action 就是一个 Job，例如上文中的 `count`，会生成一个 Job，一个应用可能有多个 action，因此就有 Job 的概念，Job 之间独立执行的，不会互相共享数据。
 
-### Job/Stage/Task 的执行
+`DAGScheduler` 划分好 Job/Stage/Task 后，会把 Task 通过 RPC 传给 executor 去执行，而由 executor 把 Task 运行状态不断地同步给 `DAGScheduler`，`DAGScheduler` 会进行相应的处理，例如重试失败的 Stage，把宕机的 worker 上的任务重新调度等容错处理。
 
-`DAGScheduler` 划分好 Job/Stage/Task 后，会把 Task 交给资源管理器执行，而资源管理器会不断地把 Task 运行状态同步给 `DAGScheduler`，而 `DAGScheduler` 会进行相应的处理，例如重试失败的 Stage，把宕机的 worker 上的任务重新调度等容错处理。
+#### Task 执行完毕时的处理
 
-Job 执行完毕，应用就执行完毕了~
+Task 执行完毕时，相关处理逻辑有：
+
+* `CoarseGrainedSchedulerBackend.receive StatusUpdate` 会回收对应 executor 上该 task 占据的资源
+* `TaskSetManager.handleSuccessfulTask` 会取消该 task 的其他 attempt
+* `DAGScheduler.handleTaskCompletion` 会判断 task 对应的 stage （通过 `shuffleStage.pendingPartitions.isEmpty` 或 `resultStage.activeJob.numFinished=job.numPartitions`）是否完毕，如果完毕会触发依赖该 stage 的 stage 执行。当该 task 为 ShuffleMapTask 时，会通过 `mapOutputTracker.registerMapOutput` 注册其结果所在的位置，从而让后一 Stage 的 task 能够读到其输出。
