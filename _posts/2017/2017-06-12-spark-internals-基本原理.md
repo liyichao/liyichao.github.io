@@ -14,7 +14,7 @@ tags: ["spark 源码", "spark core", "spark 实现"]
 
 ### 资源管理器
 
-那么 spark cluster 有什么用？我们知道，spark 是分布式执行的，对于一个计算，会分解为很多 task，那么这些 task 会分配到多台机器去执行，那么这就涉及一些问题，例如把 task 分配到哪台机器去执行？每台机器上的 CPU，Memory 还剩多少，够不够执行这个 task？task 结束了 CPU 资源怎么回收以分配给别的 task？这些功能就是资源管理器需要提供的，我们具体看下能用 Mesos 干什么：
+那么 spark cluster 有什么用？我们知道，spark 是分布式执行的，对于一个计算，会分解为很多 task，那么这些 task 会分配到多台机器去执行，那么这就涉及一些问题，例如把 task 分配到哪台机器去执行？每台机器上的 CPU，Memory 还剩多少，够不够执行这个 task？task 结束了 CPU 资源怎么回收以分配给别的 task？这些功能就是资源管理器需要提供的，以 Mesos 为例：
 
 * 用户需要部署 Mesos Master，并在每台机器上部署 Mesos Slave。（和 Standalone 很像对不对）
 * Slave 会向 Master 汇报本机的 CPU，Memory，这样 Master 就知道所有机器的 CPU、Memory 情况。
