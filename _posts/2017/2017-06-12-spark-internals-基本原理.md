@@ -100,9 +100,7 @@ RDD 是 spark 执行运算的主要数据结构，具有以下几个重要的属
 
 `DAGScheduler` 划分好 Job/Stage/Task 后，会把 Task 通过 RPC 传给 executor 去执行，而由 executor 把 Task 运行状态不断地同步给 `DAGScheduler`，`DAGScheduler` 会进行相应的处理，例如重试失败的 Stage，把宕机的 worker 上的任务重新调度等容错处理。
 
-#### Task 执行完毕时的处理
-
-Task 执行完毕时会把完成状态传回 DAGScheduler，由它继续规划 DAG 的执行，例如当一个 Stage 完成后触发它的子 Stage 的执行 等等。具体处理逻辑有：
+当 Task 成功运行完毕时，具体处理逻辑有：
 
 * `CoarseGrainedSchedulerBackend.receive StatusUpdate` 会回收对应 executor 上该 task 占据的资源
 * `TaskSetManager.handleSuccessfulTask` 会取消该 task 的其他 attempt
@@ -114,5 +112,5 @@ Task 执行完毕时会把完成状态传回 DAGScheduler，由它继续规划 D
 
 ## 链接
 
-* [JerryLead](https://github.com/JerryLead/SparkInternals/blob/master/markdown/1-Overview.md)
-* [JerryShao](http://jerryshao.me/)
+* [JerryLead 的源码解析文章](https://github.com/JerryLead/SparkInternals/blob/master/markdown/1-Overview.md)
+* [JerryShao 的源码解析文章](http://jerryshao.me/)
