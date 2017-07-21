@@ -1,23 +1,18 @@
 ---
 layout: post
-title: "spark internals 基本原理"
+title: "Spark 程序是如何跑起来的？"
 category:
 tags: ["spark 源码", "spark core", "spark 实现"]
 ---
 {% include JB/setup %}
 
-
-需要了解 spark internals 的有两种人：写 spark 程序的用户/spark 运维，spark 开发者。spark 用户轻易不看源代码，但有时因为调优，debug 的需要而需要了解一些 spark 原理，开发者则必须完全了解 spark 原理。本文既想满足第一种人的需要，也想做为开发者了解 spark 的入门材料。
-
-关于 spark 实现的文章我知道的有 [JerryLead](https://github.com/JerryLead/SparkInternals/blob/master/markdown/1-Overview.md), [JerryShao](http://jerryshao.me/)，本文的内容，跟他们写的内容是一样的，都是介绍 spark 基本原理，内容来源 spark 源码，但不拘泥于代码细节，不同点在于写的思路不一样，因为每个人读和写的思路是不一样的，期望能相互补充。让我们开始吧！
-
-# 概览
+开发出的 Spark 程序可能慢了，需要调优，或者挂了需要查错，或者要改进 Spark 框架本身，这时就需要了解 Spark 的内部实现，在了解 Spark 内部实现时，第一个想知道的就是一个 RDD 程序到底是怎么跑起来的，那么，它是怎么跑起来的呢？
 
 ## 部署
 
-### 资源管理器
-
 我们要把 spark 程序跑起来，得先把 spark 部署起来，部署有三种方式 Mesos，Yarn，Standalone。以 Standalone 为例（其他类似），我们准备三台机器，一台运行 `./sbin/start-master.sh`，另两台运行 `./sbin/start-slave.sh <master-spark-URL>`，这样，spark cluster 就跑起来了。
+
+### 资源管理器
 
 那么 spark cluster 有什么用？我们知道，spark 是分布式执行的，对于一个计算，会分解为很多 task，那么这些 task 会分配到多台机器去执行，那么这就涉及一些问题，例如把 task 分配到哪台机器去执行？每台机器上的 CPU，Memory 还剩多少，够不够执行这个 task？task 结束了 CPU 资源怎么回收以分配给别的 task？这些功能就是资源管理器需要提供的，我们具体看下能用 Mesos 干什么：
 
@@ -49,25 +44,25 @@ bin/spark-submit --class org.apache.spark.examples.GroupByTest  --master spark:/
 
 这个跟 `deploy-mode` 有关，我们先看 `deploy-mode=cluster` 的情况。spark master 会启动一个 HTTP server，用于用户提交 spark 应用，spark-submit 会和 spark master 通信（要不然为什么要有 `--master` 参数），把 spark 应用运行所需要的信息传递过去，例如jar 文件，主类等等，spark master 记录下来，这时 spark-submit 执行完毕，而 spark master 会在合适时机启动主类，这个主类，就是 [GroupByTest](https://github.com/apache/spark/blob/master/examples/src/main/scala/org/apache/spark/examples/GroupByTest.scala)，也就是我们会谈到的 spark 应用的 driver。
 
-如果 `deploy-mode=mesos`，我们只讨论`Coarse-Grained` 的情况。用户在部署 mesos 的时候同时需要部署 `MesosClusterDispatcher`，它会顺带启动`MesosClusterScheduler` 和 `MesosRestServer`，其中 MesosClusterScheduler 是一个 mesos scheduler，当用户 submit 时，会提交到 MesosRestServer，它负责把 driver 塞到 MesosClusterScheduler 的待启动 driver 列表。
+如果 `deploy-mode=cluster master=mesos`，我们只讨论`Coarse-Grained` 的情况。用户在部署 mesos 的时候同时需要部署 `MesosClusterDispatcher`，它会顺带启动`MesosClusterScheduler` 和 `MesosRestServer`，其中 MesosClusterScheduler 是一个 mesos scheduler，当用户 submit 时，会提交到 MesosRestServer，它负责把 driver 塞到 MesosClusterScheduler 的待启动 driver 列表，而他会把 driver 做为 task 给启动起来，启动命令重用了 `./bin/spark-submit`，只是 deploy-mode 变成了 client。
 
-MesosClusterScheduler 只负责启动 driver，该 driver 会包含 `MesosCoarseGrainedSchedulerBackend`，（该对象也是一个 mesos scheduler）它会负责 executor 的启动。在静态分配的情况下（非 dynamic allocation 就叫静态）该对象在初始化时会通过 `spark.cores.max` 等参数知道该 driver 需要启动多少个 executor，从而在 mesos 提供资源给它时启动对应数量的 executor。而 DAG 相关的 task 所需要的资源其实就是 executor 得到的资源。
+MesosClusterScheduler 只负责启动 driver，该 driver 会包含 `MesosCoarseGrainedSchedulerBackend`，该对象也是一个 mesos scheduler，这意味着它也可以启动 task，它会把 executor 做为 task 启动。在静态分配的情况下（非 dynamic allocation 就叫静态）该对象在初始化时会通过 `spark.cores.max` 等参数知道该 driver 需要启动多少个 executor，从而在 mesos 提供资源给它时启动对应数量的 executor。而 DAG 相关的 task 所需要的资源其实就是 executor 得到的资源。
 
 综上，mesos 给资源给 `MesosClusterScheduler` 用于启动 driver，给资源给 `MesosCoarseGrainedSchedulerBackend` 用于启动 executor，executor 用自己的资源来跑 task。
 
-### driver
+### driver 和 executor
 
-如果我们在 LogQuery 应用启动后去 worker 机器上查看运行的进程，我们就能看到一个额外的 `DriverWrapper` 进程，它只是对 `GroupByTest` 主类的一层简单封装，而运行的 Executor 进程，则是 `CoarseGrainedExecutorBackend`。
+那么 driver 和 executor 具体是什么呢？如果我们在 LogQuery 应用启动后去 worker 机器上查看运行的进程，我们就能看到一个额外的 `DriverWrapper` 进程，它只是对 `GroupByTest` 主类的一层简单封装，而运行的 Executor 进程，则是 `CoarseGrainedExecutorBackend`。
 
-driver 是用户定义的，而 executor 则是标准的，与应用无关的程序，因为 executor 需要运行的 task 是由 spark 定义的，所以 executor 可以由 spark 框架提供，而 executor 运行的 task 到底是什么呢？请看下文分解。另外，这里 executor 对应于资源管理器里讲的 `executor`，那 `driver` 对应于 `scheduler`? 是的，没错，主类 `GroupByTest` 进程内部运行了不同功能的线程，`scheduler` 是其中之一，这个之后也会讲。
+driver 是用户定义的，而 executor 则是标准的，与应用无关的程序，因为 executor 需要运行的 task 是由 spark 定义的，所以 executor 可以由 spark 框架提供。那么 executor 运行的 task 到底是什么呢？
 
 ## 执行计划
 
-### RDD 的属性
+Executor 执行的 Task 是由 driver 里的 DAGScheduler 生成的，DAGScheduler 会负责 把DAG（Directed Acyclic Graph）拆分成 Task，而 DAG 是对 RDD 进行变换得到的，因此我们需要先了解 RDD。
 
-知道了这个系统有几个运行实体（spark master, spark slave, driver, executor）之后，我们想知道 drvier 干了什么，而 executor 执行的 task 又是什么。
+### RDD
 
-我们先来认识 RDD，RDD 是 spark 执行运算的主要数据结构，具有以下几个重要的属性：
+RDD 是 spark 执行运算的主要数据结构，具有以下几个重要的属性：
 
 * partitions 列表
 * `compute(Partition): Iterator` 函数，用来表明如何计算得到每个 partition
@@ -85,14 +80,9 @@ driver 是用户定义的，而 executor 则是标准的，与应用无关的程
 ```
 其中 f 就是 `flatMap` 接收的参数。即父 RDD 做 flatMap 得到，这里的重点是，`.flatMap` 并没有真正执行 `flatMap` 操作，而只是创建了一个 A->B 的依赖，并且记录了如何利用依赖计算出 B。
 
-以此类推，以 RDD 为节点，依赖关系为边，最后会形成一个有向无环图（DAG: Directed Acyclic Graph），那么最后需要计算的是叶子节点 RDD 的数据，而这需要计算父 RDD 的数据，这可能是同一个 Task，也可能不是，具体如何把 DAG 的计算拆解成一个个 Task，从而把 Task 丢给资源管理器去执行，就是 `DAGScheduler` 做的事情了，这也是 driver 的一个子模块。
+以此类推，以 RDD 为节点，依赖关系为边，最后会形成一个 DAG，那么最后需要计算的是叶子节点 RDD 的数据，而这需要计算父 RDD 的数据，这可能是同一个 Task，也可能不是，具体如何把 DAG 的计算拆解成一个个 Task 呢？
 
 ### Job/Stage/Task
-
-那么整个 DAG 如何切分为 Task 呢？我们需要理解 Task 划分的目的是什么。Task 是一个执行的最小单位，Task 的输出需要保存到内存或硬盘上，这意味着：
-
-* Task 是并行的单位。一个 Task 只能在一个 Executor 执行，多个 Task 可以并行执行
-* Task 是数据输出的时机。Task 结束时必定有输出，落地到磁盘或保存在内存上，Task 之间互相交互的只有这些数据。
 
 那么 Task 是如何划分的呢？我们可以设想一些例子。
 
@@ -101,14 +91,28 @@ driver 是用户定义的，而 executor 则是标准的，与应用无关的程
 
 有 `ShuffleDependency` 的 DAG，需要在第一阶段执行 map，然后数据重新洗牌（shuffle），再执行第二阶段的各个 Task，因此就有了 Stage 的概念。接着上面 `reduceByKey` 的例子，分为两个 Stage，第一个 Stage 运行 N 个 Task，执行 `rdd.map(f1).filter(f2)`，第二个 Stage 执行 `reduceByKey(f3).count`，运行 M 个 Task。第二个 Stage 必须等第一个 Stage 完成后进行，第二个 Stage 的 M 个 Task，每一个 Task 都必须读 N 个 Task 的属于自己的那一份输出。
 
-那么什么是 Job 呢？一个 action 就是一个 Job，例如上文中的 `count`，会生成一个 Job，一个应用可能有多个 action，因此就有 Job 的概念，Job 之间独立执行的，不会互相共享数据。
+由上可见，Task 是执行的最小单位，Task 的输出需要保存到内存或硬盘上，这意味着：
+
+* Task 是并行的单位。一个 Task 只能在一个 Executor 执行，多个 Task 可以并行执行
+* Task 是数据输出的时机。Task 结束时必定有输出，落地到磁盘或保存在内存上，Task 之间互相交互的只有这些数据。
+
+那么什么是 Job 呢？一个 action 就是一个 Job，一个 Job 包含多个 Stage。例如上文中的 `count`，会生成一个 Job，一个应用可能有多个 action，因此就有 Job 的概念，Job 之间独立执行的，不会互相共享数据。
 
 `DAGScheduler` 划分好 Job/Stage/Task 后，会把 Task 通过 RPC 传给 executor 去执行，而由 executor 把 Task 运行状态不断地同步给 `DAGScheduler`，`DAGScheduler` 会进行相应的处理，例如重试失败的 Stage，把宕机的 worker 上的任务重新调度等容错处理。
 
 #### Task 执行完毕时的处理
 
-Task 执行完毕时，相关处理逻辑有：
+Task 执行完毕时会把完成状态传回 DAGScheduler，由它继续规划 DAG 的执行，例如当一个 Stage 完成后触发它的子 Stage 的执行 等等。具体处理逻辑有：
 
 * `CoarseGrainedSchedulerBackend.receive StatusUpdate` 会回收对应 executor 上该 task 占据的资源
 * `TaskSetManager.handleSuccessfulTask` 会取消该 task 的其他 attempt
 * `DAGScheduler.handleTaskCompletion` 会判断 task 对应的 stage （通过 `shuffleStage.pendingPartitions.isEmpty` 或 `resultStage.activeJob.numFinished=job.numPartitions`）是否完毕，如果完毕会触发依赖该 stage 的 stage 执行。当该 task 为 ShuffleMapTask 时，会通过 `mapOutputTracker.registerMapOutput` 注册其结果所在的位置，从而让后一 Stage 的 task 能够读到其输出。
+
+## 总结
+
+本文回答了Spark 程序是如何跑起来这个问题。
+
+## 链接
+
+* [JerryLead](https://github.com/JerryLead/SparkInternals/blob/master/markdown/1-Overview.md)
+* [JerryShao](http://jerryshao.me/)
