@@ -16,7 +16,7 @@ BlueStore 用了三个分区。
 
 * Block： 首 BDEV_LABEL_BLOCK_SIZE 字节存 label，从中间开始的size * (bluestore_bluefs_min_ratio + bluestore_bluefs_gift_ratio) 的空间归 bluefs 管，由 bluefs_extents 表示，其余存 Data，其空闲块列表存 RocksDB，由 Freelistmanager 管理。
 
-OSD 启动时，BlueStore 的初始化过程是读 DB superblock，然后 reply bluefs journal，DB 分区，WAL 分区以及 Block 分区中 bluefs 的内容都可以访问了，于是基于 bluefs db，db.wal 目录的 RocksDB 就可以初始化了，RocksDB 初始化后，对象的元数据载入了，Block 分区的空闲块列表也载入了，Bluestore 就可以开始对外服务了。
+OSD 启动时，BlueStore 的初始化过程是读 DB superblock，然后 reply bluefs journal，之后，DB 分区，WAL 分区以及 Block 分区中 bluefs 管理的内容都可以访问了，于是基于 bluefs db，db.wal 目录的 RocksDB 就可以初始化了，RocksDB 初始化后，对象的元数据载入了，Block 分区的空闲块列表也载入了，Bluestore 就可以开始对外服务了。
 
 # BlueStore 如何对外服务
 
