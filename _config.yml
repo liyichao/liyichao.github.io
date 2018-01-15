@@ -1,4 +1,4 @@
-pygments: true
+rouge: true
 permalink: /posts/:title.html
 rdiscount:
   extensions: [smart]
